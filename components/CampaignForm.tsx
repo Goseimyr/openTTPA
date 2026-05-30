@@ -5,9 +5,12 @@ type Props = {
   campaign?: Campaign | null;
   organizations: Organization[];
   message?: string;
+  selectedOrganizationId?: string;
 };
 
-export function CampaignForm({ campaign, organizations, message }: Props) {
+export function CampaignForm({ campaign, organizations, message, selectedOrganizationId }: Props) {
+  const defaultOrganizationId = campaign?.organization_id || selectedOrganizationId || organizations[0]?.id;
+
   return (
     <form className="panel grid" action={saveCampaign}>
       {message ? <p className="error">{message}</p> : null}
@@ -16,7 +19,7 @@ export function CampaignForm({ campaign, organizations, message }: Props) {
       <div className="grid two">
         <label>
           Organisation
-          <select name="organization_id" defaultValue={campaign?.organization_id || organizations[0]?.id} required>
+          <select name="organization_id" defaultValue={defaultOrganizationId} required>
             {organizations.map((organization) => (
               <option key={organization.id} value={organization.id}>
                 {organization.name}
