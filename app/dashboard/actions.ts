@@ -4,10 +4,10 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { slugify } from "@/lib/format";
-import { createSupabaseServerClient } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 
 async function requireUser() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/(auth)/login/actions";
 import { formatDate, publicCampaignUrl } from "@/lib/format";
-import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase";
+import { createClient, hasSupabaseEnv } from "@/utils/supabase/server";
 import type { Campaign, Organization } from "@/lib/types";
 import { createOrganization } from "./actions";
 
@@ -27,7 +27,7 @@ export default async function DashboardPage({
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
