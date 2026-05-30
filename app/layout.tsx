@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import { signOut } from "@/app/(auth)/login/actions";
 import { createClient, hasSupabaseEnv } from "@/utils/supabase/server";
 import "./globals.css";
@@ -49,6 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Link href="/privacy">Behandling av personuppgifter</Link>
           <Link href="/cookies">Användning av kakor</Link>
         </footer>
+        <Analytics />
       </body>
     </html>
   );

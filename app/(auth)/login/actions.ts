@@ -31,7 +31,7 @@ export async function signUp(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/dashboard`
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/login`
     }
   });
 
@@ -39,7 +39,7 @@ export async function signUp(formData: FormData) {
     redirect(`/signup?message=${encodeURIComponent(formatAuthError(error.message))}`);
   }
 
-  redirect("/dashboard?message=Kontot är skapat. Kontrollera e-posten om bekräftelse krävs.");
+  redirect(`/signup/success?email=${encodeURIComponent(email)}`);
 }
 
 export async function resetPassword(formData: FormData) {
