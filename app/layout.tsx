@@ -47,8 +47,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         ) : null}
         {children}
         <footer className="shell footer">
+          <Link href="/ttpa">TTPA - EU:s förordning om politisk reklam</Link>
           <Link href="/privacy">Behandling av personuppgifter</Link>
           <Link href="/cookies">Användning av kakor</Link>
+          <Link href="/open-source">Öppen källkod</Link>
         </footer>
         <Analytics />
       </body>
