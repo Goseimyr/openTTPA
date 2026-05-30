@@ -1,4 +1,5 @@
-import { signIn, signUp } from "./actions";
+import Link from "next/link";
+import { signIn } from "./actions";
 
 export default async function LoginPage({
   searchParams
@@ -11,17 +12,17 @@ export default async function LoginPage({
     <main className="shell">
       <section className="grid two" style={{ alignItems: "start", paddingTop: 48 }}>
         <div className="stack">
-          <h1>Kom igång</h1>
+          <h1>Välkommen tillbaka</h1>
           <p className="lead">
-            Registrera dig eller logga in med Supabase Auth. Efter inloggning kan du skapa
-            organisation, kampanjer och publika TTPA-meddelanden.
+            Fortsätt till din organisation, dina kampanjer och publicerade
+            transparensmeddelanden.
           </p>
-          {params.message ? <p className="notice">{params.message}</p> : null}
         </div>
 
         <div className="panel grid">
           <form className="grid" action={signIn}>
             <h2>Logga in</h2>
+            {params.message ? <p className="form-message">{params.message}</p> : null}
             <label>
               E-post
               <input name="email" type="email" autoComplete="email" required />
@@ -32,21 +33,16 @@ export default async function LoginPage({
             </label>
             <button type="submit">Logga in</button>
           </form>
-
-          <form className="grid" action={signUp}>
-            <h2>Skapa konto</h2>
-            <label>
-              E-post
-              <input name="email" type="email" autoComplete="email" required />
-            </label>
-            <label>
-              Lösenord
-              <input name="password" type="password" autoComplete="new-password" minLength={8} required />
-            </label>
-            <button type="submit" className="secondary">
-              Registrera
-            </button>
-          </form>
+          <div className="auth-links">
+            {params.message ? (
+              <p className="muted">
+                Har du glömt lösenordet? <Link href="/forgot-password">Återställ lösenord</Link>.
+              </p>
+            ) : null}
+            <p className="muted">
+              Har du inget konto? <Link href="/signup">Kom igång</Link>.
+            </p>
+          </div>
         </div>
       </section>
     </main>
