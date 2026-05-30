@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { signOut } from "@/app/(auth)/login/actions";
 import { formatDate, publicCampaignUrl } from "@/lib/format";
 import { createClient, hasSupabaseEnv } from "@/utils/supabase/server";
 import type { Campaign, Organization } from "@/lib/types";
@@ -95,11 +94,9 @@ export default async function DashboardPage({
           <h1>Kampanjer</h1>
           <p className="muted">Inloggad som {user.email}</p>
         </div>
-        <form action={signOut}>
-          <button className="secondary" type="submit">
-            Logga ut
-          </button>
-        </form>
+        <Link className="button secondary" href="/profile">
+          Profil
+        </Link>
       </section>
 
       {params.message ? <p className="notice">{params.message}</p> : null}

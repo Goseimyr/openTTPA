@@ -6,18 +6,15 @@ export default function Home() {
     <main className="shell">
       <section className="hero">
         <div className="stack">
-          <span className="pill">TTPA för politisk reklam</span>
+          <span className="pill">Transparensmeddelanden för politisk reklam</span>
           <h1>TTPA-meddelanden utan tung administration.</h1>
           <p className="lead">
             OpenTTPA hjälper organisationer att samla rätt metadata, publicera en öppen
             informationssida och dela länken som QR-kod i annonser, tryck och video.
           </p>
           <div className="actions">
-            <Link className="button" href="/login">
-              Skapa första kampanjen
-            </Link>
-            <Link className="button secondary" href="/dashboard">
-              Till översikten
+            <Link className="button" href="/signup">
+              Kom igång
             </Link>
           </div>
         </div>
