@@ -1,0 +1,47 @@
+import { notFound, redirect } from "next/navigation";
+import { CampaignForm } from "@/components/CampaignForm";
+import { publicCampaignUrl } from "@/lib/format";
+import { createSupabaseServerClient } from "@/lib/supabase";
+import type { Campaign, Organization } from "@/lib/types";
+
+export default async function EditCampaignPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ message?: string }>;
+}) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: memberships } = await supabase
+    .from("organization_members")
+    .select("organizations(*)")
+    .eq("user_id", user.id);
+
+  const organizations = (memberships || [])
+    .map((membership) => normalizeOrganization(membership.organizations))
+    .filter(Boolean) as Organization[];
+
+  const { data: campaign } = await supabase.from("campaigns").select("*").eq("id", id).single();
+  if (!campaign) notFound();
+
+  return (
+    <main className="shell" style={{ paddingBottom: 64 }}>
+      <h1>Uppdatera kampanj</h1>
+      <p className="lead">
+        Publik sida: <a href={publicCampaignUrl((campaign as Campaign).slug)}>{publicCampaignUrl((campaign as Campaign).slug)}</a>
+      </p>
+      <CampaignForm campaign={campaign as Campaign} organizations={organizations} message={query.message} />
+    </main>
+  );
+}
+
+function normalizeOrganization(value: Organization | Organization[] | null) {
+  return Array.isArray(value) ? value[0] : value;
+}
