@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { signOut } from "@/app/(auth)/login/actions";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { createClient, hasSupabaseEnv } from "@/utils/supabase/server";
-import { headers } from "next/headers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +13,6 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser();
-  const breadcrumb = user ? await getBreadcrumb() : null;
 
   return (
     <html lang="sv">
@@ -42,21 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </header>
         {user ? (
           <nav className="shell subnav" aria-label="Plats">
-            <Link href="/">Start</Link>
-            {breadcrumb?.showOrganizations ? (
-              <>
-                <span aria-hidden>&gt;</span>
-                <Link href="/dashboard">Organisationer</Link>
-                {breadcrumb.organization ? (
-                  <>
-                    <span aria-hidden>&gt;</span>
-                    <Link href={`/dashboard/organizations/${breadcrumb.organization.id}`}>
-                      {breadcrumb.organization.name}
-                    </Link>
-                  </>
-                ) : null}
-              </>
-            ) : null}
+            <Breadcrumb />
           </nav>
         ) : null}
         {children}
@@ -81,36 +66,6 @@ async function getUser() {
       data: { user }
     } = await supabase.auth.getUser();
     return user;
-  } catch {
-    return null;
-  }
-}
-
-async function getBreadcrumb() {
-  if (!hasSupabaseEnv()) return null;
-
-  try {
-    const headerStore = await headers();
-    const pathname = headerStore.get("x-current-path") || "";
-    const showOrganizations =
-      pathname === "/dashboard" ||
-      pathname.startsWith("/dashboard/organizations") ||
-      pathname.startsWith("/dashboard/campaigns");
-
-    if (!showOrganizations) return null;
-
-    const match = pathname.match(/^\/dashboard\/organizations\/([^/?]+)/);
-    if (!match) return { showOrganizations, organization: null };
-
-    const supabase = await createClient();
-    const organizationId = decodeURIComponent(match[1]);
-    const { data } = await supabase
-      .from("organizations")
-      .select("id, name")
-      .eq("id", organizationId)
-      .maybeSingle();
-
-    return { showOrganizations, organization: data || null };
   } catch {
     return null;
   }
