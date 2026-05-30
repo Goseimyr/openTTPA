@@ -15,14 +15,54 @@ En Next.js/Vercel-app för att skapa och tillhandahålla TTPA-transparensmeddela
 ## Kom igång
 
 1. Skapa ett Supabase-projekt.
-2. Kör SQL:en i `supabase/schema.sql`.
-3. Kopiera `.env.example` till `.env.local` och fyll i värdena.
-4. Installera beroenden och starta:
+2. Kopiera `.env.example` till `.env.local` och fyll i värdena.
+3. Installera beroenden och starta:
 
 ```bash
 npm install
 npm run dev
 ```
+
+## Databasmigrationer
+
+Databasschemat hanteras med Supabase CLI och SQL-filer i `supabase/migrations/`.
+Ändra inte tabeller, RLS-policyer, triggers eller funktioner direkt i remote Supabase
+Dashboard när migrations används.
+
+Första gången:
+
+```bash
+npx supabase login
+npx supabase link
+npx supabase db push
+```
+
+Lokal utveckling:
+
+```bash
+npx supabase start
+npx supabase db reset
+```
+
+Ny schemaändring:
+
+```bash
+npx supabase migration new describe_change
+# redigera den skapade SQL-filen i supabase/migrations/
+npx supabase db reset
+npm run build
+```
+
+Efter att PR:en med migrationen är mergad till `main`:
+
+```bash
+git switch main
+git pull --ff-only origin main
+npx supabase db push
+```
+
+Använd `supabase/seed.sql` endast för lokal demo- och testdata, inte för riktig
+kampanjdata.
 
 ## TTPA-källor
 
