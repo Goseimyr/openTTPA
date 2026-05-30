@@ -30,6 +30,10 @@ export default async function NewCampaignPage({
 
   if (organizations.length === 0) redirect("/dashboard");
 
+  const selectedOrganizationId = organizations.some((organization) => organization.id === params.organization)
+    ? params.organization
+    : organizations[0].id;
+
   return (
     <main className="shell" style={{ paddingBottom: 64 }}>
       <h1>Ny kampanj</h1>
@@ -37,9 +41,8 @@ export default async function NewCampaignPage({
       <CampaignForm
         organizations={organizations}
         message={params.message}
-        selectedOrganizationId={params.organization}
+        selectedOrganizationId={selectedOrganizationId}
       />
     </main>
   );
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -12,7 +12,9 @@ type OrganizationCrumb = {
 
 export function Breadcrumb() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [organization, setOrganization] = useState<OrganizationCrumb | null>(null);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
 
   const showOrganizations =
     pathname === "/" ||
@@ -20,7 +22,25 @@ export function Breadcrumb() {
     pathname.startsWith("/dashboard/organizations") ||
     pathname.startsWith("/dashboard/campaigns");
 
-  const organizationId = pathname.match(/^\/dashboard\/organizations\/([^/]+)/)?.[1] || null;
+  const routeOrganizationId = pathname.match(/^\/dashboard\/organizations\/([^/]+)/)?.[1] || null;
+  const campaignOrganizationId = pathname.startsWith("/dashboard/campaigns")
+    ? searchParams.get("organization") || selectedOrganizationId
+    : null;
+  const organizationId = routeOrganizationId || campaignOrganizationId;
+
+  useEffect(() => {
+    function handleOrganizationChange(event: Event) {
+      const detail = (event as CustomEvent<{ organizationId?: string }>).detail;
+      setSelectedOrganizationId(detail?.organizationId || null);
+    }
+
+    window.addEventListener("openttpa:organization-change", handleOrganizationChange);
+    return () => window.removeEventListener("openttpa:organization-change", handleOrganizationChange);
+  }, []);
+
+  useEffect(() => {
+    if (!pathname.startsWith("/dashboard/campaigns")) setSelectedOrganizationId(null);
+  }, [pathname]);
 
   useEffect(() => {
     let ignore = false;
