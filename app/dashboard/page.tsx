@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { formatDate, publicCampaignUrl } from "@/lib/format";
+import { formatDate, normalizeOrganization, publicCampaignUrl } from "@/lib/format";
 import { createClient, hasSupabaseEnv } from "@/utils/supabase/server";
 import type { Campaign, Organization } from "@/lib/types";
 import { createOrganization } from "./actions";
@@ -33,10 +33,21 @@ export default async function DashboardPage({
 
   if (!user) redirect("/login");
 
-  const { data: memberships } = await supabase
+  const { data: memberships, error: membershipsError } = await supabase
     .from("organization_members")
     .select("organizations(*)")
     .eq("user_id", user.id);
+
+  if (membershipsError) {
+    return (
+      <main className="shell">
+        <section className="panel">
+          <h1>Något gick fel</h1>
+          <p className="muted">Det gick inte att hämta dina organisationer. Försök igen senare.</p>
+        </section>
+      </main>
+    );
+  }
 
   const organizations = ((memberships || [])
     .map((membership) => normalizeOrganization(membership.organizations))
@@ -74,11 +85,22 @@ export default async function DashboardPage({
   }
 
   const organizationIds = organizations.map((organization) => organization.id);
-  const { data: campaigns } = await supabase
+  const { data: campaigns, error: campaignsError } = await supabase
     .from("campaigns")
     .select("*, organizations(*)")
     .in("organization_id", organizationIds)
     .order("updated_at", { ascending: false });
+
+  if (campaignsError) {
+    return (
+      <main className="shell">
+        <section className="panel">
+          <h1>Något gick fel</h1>
+          <p className="muted">Det gick inte att hämta dina kampanjer. Försök igen senare.</p>
+        </section>
+      </main>
+    );
+  }
 
   const { data: viewRows } = await supabase
     .from("campaign_view_counts")
@@ -163,6 +185,3 @@ function statusLabel(status: string) {
   return "Utkast";
 }
 
-function normalizeOrganization(value: Organization | Organization[] | null) {
-  return Array.isArray(value) ? value[0] : value;
-}

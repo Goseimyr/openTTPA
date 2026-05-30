@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { CampaignForm } from "@/components/CampaignForm";
-import { publicCampaignUrl } from "@/lib/format";
+import { normalizeOrganization, publicCampaignUrl } from "@/lib/format";
 import { createClient } from "@/utils/supabase/server";
 import type { Campaign, Organization } from "@/lib/types";
 
@@ -42,6 +42,3 @@ export default async function EditCampaignPage({
   );
 }
 
-function normalizeOrganization(value: Organization | Organization[] | null) {
-  return Array.isArray(value) ? value[0] : value;
-}

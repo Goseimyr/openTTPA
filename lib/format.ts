@@ -17,6 +17,10 @@ export function publicCampaignUrl(slug: string) {
   return `${base.replace(/\/$/, "")}/t/${slug}`;
 }
 
+export function normalizeOrganization<T>(value: T | T[] | null): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value;
+}
+
 export function slugify(value: string) {
   return value
     .toLowerCase()
