@@ -100,6 +100,43 @@ export async function createOrganization(formData: FormData) {
   redirect(`/dashboard?created=${encodeURIComponent(String(data))}`);
 }
 
+export async function updateOrganization(formData: FormData) {
+  const { supabase } = await requireUser();
+  const id = String(formData.get("id") || "");
+
+  const raw = {
+    name: String(formData.get("name") || "").trim(),
+    org_number: String(formData.get("org_number") || "").trim(),
+    website: String(formData.get("website") || "").trim()
+  };
+
+  const result = organizationSchema.safeParse(raw);
+  if (!id) redirect("/dashboard?message=Organisation saknas.");
+
+  if (!result.success) {
+    const message = result.error.issues[0]?.message || "Ogiltiga uppgifter.";
+    redirect(`/dashboard/organizations/${id}/edit?message=${encodeURIComponent(message)}`);
+  }
+
+  const { name, org_number, website } = result.data;
+  const { error } = await supabase
+    .from("organizations")
+    .update({
+      name,
+      org_number: org_number || null,
+      website: website || null
+    })
+    .eq("id", id);
+
+  if (error) {
+    redirect(`/dashboard/organizations/${id}/edit?message=${encodeURIComponent("Organisationen kunde inte sparas.")}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/organizations/${id}`);
+  redirect(`/dashboard/organizations/${id}?message=${encodeURIComponent("Organisationen har sparats.")}`);
+}
+
 export async function saveCampaign(formData: FormData) {
   const { supabase } = await requireUser();
   const id = String(formData.get("id") || "");

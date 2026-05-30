@@ -75,58 +75,69 @@ export default async function OrganizationPage({
       </section>
 
       <section className="actions" style={{ margin: "20px 0" }}>
-        <Link className="button" href={`/dashboard/campaigns/new?organization=${organization.id}`}>
-          Ny kampanj
-        </Link>
-        <Link className="button secondary" href="/dashboard">
-          Alla organisationer
+        <Link className="button secondary" href={`/dashboard/organizations/${organization.id}/edit`}>
+          Redigera organisation
         </Link>
       </section>
 
-      <section className="grid">
-        {(campaigns || []).length === 0 ? (
+      {(campaigns || []).length === 0 ? (
+        <section className="grid">
           <div className="panel">
             <h2>Ingen kampanj ännu</h2>
             <p className="muted">Skapa en kampanj för att få publik länk och QR-kod.</p>
           </div>
-        ) : (
-          (campaigns as Campaign[]).map((campaign) => (
-            <article className="card grid" key={campaign.id}>
-              <div className="row">
-                <div>
-                  <span className={`pill status-${campaign.status}`}>{statusLabel(campaign.status)}</span>
-                  <h2>{campaign.name}</h2>
-                  <p className="muted">
+        </section>
+      ) : (
+        <section className="table-wrap" aria-label="Kampanjer">
+          <table className="data-table campaign-table">
+            <colgroup>
+              <col className="name-column" />
+              <col className="sponsor-column" />
+              <col className="period-column" />
+              <col className="status-column" />
+              <col className="count-column" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Kampanj</th>
+                <th>Sponsor</th>
+                <th>Period</th>
+                <th>Status</th>
+                <th>Visningar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(campaigns as Campaign[]).map((campaign) => (
+                <tr key={campaign.id}>
+                  <td>
+                    <Link className="table-link" href={`/dashboard/campaigns/${campaign.id}`}>
+                      {campaign.name}
+                    </Link>
+                    <p className="table-meta">
+                      <a className="table-url" href={`/t/${campaign.slug}`}>
+                        {publicCampaignUrl(campaign.slug)}
+                      </a>
+                    </p>
+                  </td>
+                  <td>{campaign.sponsor_name}</td>
+                  <td>
                     {formatDate(campaign.period_start)} till {formatDate(campaign.period_end)}
-                  </p>
-                </div>
-                <img className="qr" src={`/api/qr/${campaign.slug}`} alt={`QR-kod för ${campaign.name}`} />
-              </div>
-              <div className="grid three">
-                <div>
-                  <strong>{viewsByCampaign.get(campaign.id) || 0}</strong>
-                  <p className="muted">visningar</p>
-                </div>
-                <div>
-                  <strong>{campaign.sponsor_name}</strong>
-                  <p className="muted">sponsor</p>
-                </div>
-                <div>
-                  <strong>{publicCampaignUrl(campaign.slug)}</strong>
-                  <p className="muted">publik länk</p>
-                </div>
-              </div>
-              <div className="actions">
-                <Link className="button" href={`/dashboard/campaigns/${campaign.id}`}>
-                  Uppdatera
-                </Link>
-                <Link className="button secondary" href={`/t/${campaign.slug}`}>
-                  Öppna transparenssida
-                </Link>
-              </div>
-            </article>
-          ))
-        )}
+                  </td>
+                  <td>
+                    <span className={`pill status-${campaign.status}`}>{statusLabel(campaign.status)}</span>
+                  </td>
+                  <td>{viewsByCampaign.get(campaign.id) || 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      <section className="actions" style={{ marginTop: 20 }}>
+        <Link className="button" href={`/dashboard/campaigns/new?organization=${organization.id}`}>
+          Skapa ny kampanj
+        </Link>
       </section>
     </main>
   );

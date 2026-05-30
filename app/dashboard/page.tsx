@@ -8,7 +8,7 @@ import { createOrganization } from "./actions";
 export default async function DashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ message?: string }>;
+  searchParams: Promise<{ message?: string; new?: string }>;
 }) {
   const params = await searchParams;
 
@@ -53,7 +53,7 @@ export default async function DashboardPage({
     .map((membership) => normalizeOrganization(membership.organizations))
     .filter(Boolean) || []) as Organization[];
 
-  if (organizations.length === 0) {
+  if (organizations.length === 0 || params.new === "organization") {
     return (
       <main className="shell">
         <section className="grid two" style={{ alignItems: "start", paddingTop: 40 }}>
@@ -63,6 +63,11 @@ export default async function DashboardPage({
               Organisationen håller ihop sponsorer, kampanjer och användare. Du kan lägga till fler
               kampanjer efter detta steg.
             </p>
+            {organizations.length > 0 ? (
+              <p className="muted">
+                <Link href="/dashboard">Tillbaka till organisationer</Link>
+              </p>
+            ) : null}
           </div>
           <form className="panel grid" action={createOrganization}>
             {params.message ? <p className="form-message">{params.message}</p> : null}
@@ -117,26 +122,51 @@ export default async function DashboardPage({
 
       {params.message ? <p className="notice">{params.message}</p> : null}
 
-      <section className="grid">
-        {organizations.map((organization) => (
-          <article className="card grid" key={organization.id}>
-            <div className="row">
-              <div>
-                <h2>{organization.name}</h2>
-                <p className="muted">
-                  {organization.org_number || "Organisationsnummer ej angivet"}
-                  {organization.website ? ` · ${organization.website}` : ""}
-                </p>
-              </div>
-              <span className="pill">{campaignCounts.get(organization.id) || 0} kampanjer</span>
-            </div>
-            <div className="actions">
-              <Link className="button" href={`/dashboard/organizations/${organization.id}`}>
-                Öppna organisation
-              </Link>
-            </div>
-          </article>
-        ))}
+      <section className="table-wrap" aria-label="Organisationer">
+        <table className="data-table organization-table">
+          <colgroup>
+            <col className="name-column" />
+            <col className="number-column" />
+            <col className="website-column" />
+            <col className="count-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Organisation</th>
+              <th>Organisationsnummer</th>
+              <th>Webbplats</th>
+              <th>Kampanjer</th>
+            </tr>
+          </thead>
+          <tbody>
+            {organizations.map((organization) => (
+              <tr key={organization.id}>
+                <td>
+                  <Link className="table-link" href={`/dashboard/organizations/${organization.id}`}>
+                    {organization.name}
+                  </Link>
+                </td>
+                <td>{organization.org_number || "Ej angivet"}</td>
+                <td>
+                  {organization.website ? (
+                    <a className="table-url" href={organization.website}>
+                      {organization.website}
+                    </a>
+                  ) : (
+                    "Ej angiven"
+                  )}
+                </td>
+                <td>{campaignCounts.get(organization.id) || 0}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="actions" style={{ marginTop: 20 }}>
+        <Link className="button" href="/dashboard?new=organization">
+          Skapa ny organisation
+        </Link>
       </section>
     </main>
   );
