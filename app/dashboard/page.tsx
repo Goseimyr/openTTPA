@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { formatDate, normalizeOrganization, publicCampaignUrl } from "@/lib/format";
+import { normalizeOrganization } from "@/lib/format";
 import { createClient, hasSupabaseEnv } from "@/utils/supabase/server";
-import type { Campaign, Organization } from "@/lib/types";
+import type { Organization } from "@/lib/types";
 import { createOrganization } from "./actions";
 
 export default async function DashboardPage({
@@ -65,6 +65,7 @@ export default async function DashboardPage({
             </p>
           </div>
           <form className="panel grid" action={createOrganization}>
+            {params.message ? <p className="form-message">{params.message}</p> : null}
             <label>
               Organisationsnamn
               <input name="name" required />
@@ -84,12 +85,10 @@ export default async function DashboardPage({
     );
   }
 
-  const organizationIds = organizations.map((organization) => organization.id);
   const { data: campaigns, error: campaignsError } = await supabase
     .from("campaigns")
-    .select("*, organizations(*)")
-    .in("organization_id", organizationIds)
-    .order("updated_at", { ascending: false });
+    .select("id, organization_id")
+    .in("organization_id", organizations.map((organization) => organization.id));
 
   if (campaignsError) {
     return (
@@ -102,86 +101,43 @@ export default async function DashboardPage({
     );
   }
 
-  const { data: viewRows } = await supabase
-    .from("campaign_view_counts")
-    .select("campaign_id, views")
-    .in("campaign_id", (campaigns || []).map((campaign: Campaign) => campaign.id));
-
-  const viewsByCampaign = new Map((viewRows || []).map((row: { campaign_id: string; views: number }) => [row.campaign_id, row.views]));
+  const campaignCounts = new Map<string, number>();
+  (campaigns || []).forEach((campaign: { organization_id: string }) => {
+    campaignCounts.set(campaign.organization_id, (campaignCounts.get(campaign.organization_id) || 0) + 1);
+  });
 
   return (
     <main className="shell" style={{ paddingBottom: 64 }}>
       <section className="row" style={{ alignItems: "end", paddingTop: 28 }}>
         <div>
-          <h1>Kampanjer</h1>
-          <p className="muted">Inloggad som {user.email}</p>
+          <h1>Organisationer</h1>
+          <p className="lead">Välj en organisation för att se och hantera dess kampanjer.</p>
         </div>
-        <Link className="button secondary" href="/profile">
-          Profil
-        </Link>
       </section>
 
       {params.message ? <p className="notice">{params.message}</p> : null}
 
-      <section className="actions" style={{ margin: "20px 0" }}>
-        <Link className="button" href="/dashboard/campaigns/new">
-          Ny kampanj
-        </Link>
-      </section>
-
       <section className="grid">
-        {(campaigns || []).length === 0 ? (
-          <div className="panel">
-            <h2>Ingen kampanj ännu</h2>
-            <p className="muted">Skapa en kampanj för att få publik länk och QR-kod.</p>
-          </div>
-        ) : (
-          (campaigns as Campaign[]).map((campaign) => (
-            <article className="card grid" key={campaign.id}>
-              <div className="row">
-                <div>
-                  <span className={`pill status-${campaign.status}`}>{statusLabel(campaign.status)}</span>
-                  <h2>{campaign.name}</h2>
-                  <p className="muted">
-                    {campaign.organizations?.name} · {formatDate(campaign.period_start)} till{" "}
-                    {formatDate(campaign.period_end)}
-                  </p>
-                </div>
-                <img className="qr" src={`/api/qr/${campaign.slug}`} alt={`QR-kod för ${campaign.name}`} />
+        {organizations.map((organization) => (
+          <article className="card grid" key={organization.id}>
+            <div className="row">
+              <div>
+                <h2>{organization.name}</h2>
+                <p className="muted">
+                  {organization.org_number || "Organisationsnummer ej angivet"}
+                  {organization.website ? ` · ${organization.website}` : ""}
+                </p>
               </div>
-              <div className="grid three">
-                <div>
-                  <strong>{viewsByCampaign.get(campaign.id) || 0}</strong>
-                  <p className="muted">visningar</p>
-                </div>
-                <div>
-                  <strong>{campaign.sponsor_name}</strong>
-                  <p className="muted">sponsor</p>
-                </div>
-                <div>
-                  <strong>{publicCampaignUrl(campaign.slug)}</strong>
-                  <p className="muted">publik länk</p>
-                </div>
-              </div>
-              <div className="actions">
-                <Link className="button" href={`/dashboard/campaigns/${campaign.id}`}>
-                  Uppdatera
-                </Link>
-                <Link className="button secondary" href={`/t/${campaign.slug}`}>
-                  Öppna transparenssida
-                </Link>
-              </div>
-            </article>
-          ))
-        )}
+              <span className="pill">{campaignCounts.get(organization.id) || 0} kampanjer</span>
+            </div>
+            <div className="actions">
+              <Link className="button" href={`/dashboard/organizations/${organization.id}`}>
+                Öppna organisation
+              </Link>
+            </div>
+          </article>
+        ))}
       </section>
     </main>
   );
 }
-
-function statusLabel(status: string) {
-  if (status === "active") return "Aktuell";
-  if (status === "archived") return "Arkiverad";
-  return "Utkast";
-}
-

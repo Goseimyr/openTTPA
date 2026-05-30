@@ -77,29 +77,27 @@ export async function createOrganization(formData: FormData) {
 
   const { name, org_number, website } = result.data;
 
-  const { data, error } = await supabase
-    .from("organizations")
-    .insert({
-      name,
-      org_number: org_number || null,
-      website: website || null,
-      created_by: user.id
-    })
-    .select("id")
-    .single();
+  const { data, error } = await supabase.rpc("create_organization_with_owner", {
+    organization_name: name,
+    organization_org_number: org_number || null,
+    organization_website: website || null
+  });
 
   if (error || !data) {
-    redirect(`/dashboard?message=${encodeURIComponent("Organisationen kunde inte skapas.")}`);
+    console.error("create_organization_with_owner failed", {
+      userId: user.id,
+      error
+    });
+    redirect(`/dashboard?message=${encodeURIComponent(error?.message || "Organisationen kunde inte skapas.")}`);
   }
 
-  await supabase.from("organization_members").insert({
-    organization_id: data.id,
-    user_id: user.id,
-    role: "owner"
+  console.info("Organization created", {
+    organizationId: data,
+    userId: user.id
   });
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  redirect(`/dashboard?created=${encodeURIComponent(String(data))}`);
 }
 
 export async function saveCampaign(formData: FormData) {

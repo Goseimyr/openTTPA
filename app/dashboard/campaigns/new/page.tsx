@@ -7,7 +7,7 @@ import type { Organization } from "@/lib/types";
 export default async function NewCampaignPage({
   searchParams
 }: {
-  searchParams: Promise<{ message?: string }>;
+  searchParams: Promise<{ message?: string; organization?: string }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -34,7 +34,11 @@ export default async function NewCampaignPage({
     <main className="shell" style={{ paddingBottom: 64 }}>
       <h1>Ny kampanj</h1>
       <p className="lead">Fyll i uppgifterna som ska publiceras i transparensmeddelandet.</p>
-      <CampaignForm organizations={organizations} message={params.message} />
+      <CampaignForm
+        organizations={organizations}
+        message={params.message}
+        selectedOrganizationId={params.organization}
+      />
     </main>
   );
 }
