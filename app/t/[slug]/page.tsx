@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { formatDate, formatMoney, publicCampaignUrl } from "@/lib/format";
-import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import type { Campaign } from "@/lib/types";
 
@@ -98,12 +97,15 @@ function Info({ label, value, href }: { label: string; value: string; href?: str
 async function recordView(campaignId: string, slug: string) {
   try {
     const headerStore = await headers();
-    const supabase = createAdminClient();
-    await supabase.from("transparency_views").insert({
-      campaign_id: campaignId,
-      slug,
-      user_agent: headerStore.get("user-agent"),
-      referer: headerStore.get("referer")
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    await fetch(`${siteUrl}/api/record-view`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "user-agent": headerStore.get("user-agent") || "",
+        referer: headerStore.get("referer") || ""
+      },
+      body: JSON.stringify({ campaignId, slug })
     });
   } catch {
     // Public pages should remain available even if analytics is not configured.

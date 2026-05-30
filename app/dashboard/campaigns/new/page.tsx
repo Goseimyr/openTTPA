@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { normalizeOrganization } from "@/lib/format";
 import { CampaignForm } from "@/components/CampaignForm";
 import { createClient } from "@/utils/supabase/server";
 import type { Organization } from "@/lib/types";
@@ -16,10 +17,12 @@ export default async function NewCampaignPage({
 
   if (!user) redirect("/login");
 
-  const { data: memberships } = await supabase
+  const { data: memberships, error: membershipsError } = await supabase
     .from("organization_members")
     .select("organizations(*)")
     .eq("user_id", user.id);
+
+  if (membershipsError) redirect("/dashboard?message=" + encodeURIComponent("Det gick inte att hämta organisationer."));
 
   const organizations = (memberships || [])
     .map((membership) => normalizeOrganization(membership.organizations))
@@ -36,6 +39,3 @@ export default async function NewCampaignPage({
   );
 }
 
-function normalizeOrganization(value: Organization | Organization[] | null) {
-  return Array.isArray(value) ? value[0] : value;
-}
