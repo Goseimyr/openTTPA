@@ -1,35 +1,76 @@
 # OpenTTPA
 
-En Next.js/Vercel-app för att skapa och tillhandahålla TTPA-transparensmeddelanden för politisk reklam.
+OpenTTPA är en Next.js/Vercel-app för att skapa, publicera och tillhandahålla
+transparensmeddelanden för politisk reklam enligt TTPA, EU:s förordning om
+politisk reklam.
+
+Tjänsten hjälper organisationer att samla TTPA-metadata, publicera en öppen
+informationssida och dela länken som URL eller QR-kod.
 
 ## Funktioner
 
-- Supabase Auth för registrering och inloggning.
-- Organisationer med kampanjer.
-- Formulär för TTPA-metadata: sponsor, kontaktuppgifter, publiceringsperiod, finansiering, beräkningsmetod, koppling till politisk process, targeting/annonsleverans, samtycke och anmälningsväg.
+- Registrering, e-postverifiering, inloggning och lösenordsåterställning via Supabase Auth.
+- Samtycke till behandling av personuppgifter vid registrering.
+- Profilvy för inloggad användare.
+- Organisationer och kampanjer.
+- Formulär för TTPA-uppgifter: sponsor, kontaktuppgifter, publiceringsperiod, finansiering, beräkningsmetod, koppling till politisk process, targeting/annonsleverans, samtyckesåterkallelse och anmälningsväg.
 - Publik transparenssida på `/t/[slug]`.
 - QR-kod på `/api/qr/[slug]`.
 - Visningsräkning och ändringshistorik i databasen.
-- RLS-policyer för organisationernas data och publik läsning av publicerade meddelanden.
+- Supabase RLS-policyer för organisationsdata och publik läsning av publicerade meddelanden.
+- Informationssidor om TTPA, behandling av personuppgifter, kakor och öppen källkod.
+- Vercel Analytics.
 
-## Kom igång
+## Teknik
 
-1. Skapa ett Supabase-projekt.
-2. Kopiera `.env.example` till `.env.local` och fyll i värdena.
-3. Installera beroenden och starta:
+- Next.js 16 App Router
+- React 19
+- Supabase Auth, database och RLS
+- Supabase SSR helpers med `proxy.ts` för session refresh
+- Vercel Analytics
+- TypeScript
+
+## Kom igång lokalt
+
+1. Installera beroenden:
 
 ```bash
 npm install
+```
+
+2. Kopiera miljövariabler:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Fyll i `.env.local`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+4. Starta utvecklingsservern:
+
+```bash
 npm run dev
 ```
 
-## Databasmigrationer
+5. Öppna:
 
-Databasschemat hanteras med Supabase CLI och SQL-filer i `supabase/migrations/`.
-Ändra inte tabeller, RLS-policyer, triggers eller funktioner direkt i remote Supabase
-Dashboard när migrations används.
+```text
+http://localhost:3000
+```
 
-Första gången:
+## Supabase
+
+Databasschemat hanteras med Supabase CLI och SQL-migrationer i
+`supabase/migrations/`.
+
+Första gången mot ett Supabase-projekt:
 
 ```bash
 npx supabase login
@@ -37,35 +78,105 @@ npx supabase link
 npx supabase db push
 ```
 
-Lokal utveckling:
+Lokal Supabase-utveckling:
 
 ```bash
-npx supabase start
-npx supabase db reset
+npm run db:start
+npm run db:reset
 ```
 
-Ny schemaändring:
+Skapa en ny migration:
 
 ```bash
-npx supabase migration new describe_change
-# redigera den skapade SQL-filen i supabase/migrations/
-npx supabase db reset
-npm run build
+npm run db:migration -- describe_change
 ```
 
-Efter att PR:en med migrationen är mergad till `main`:
+Efter att en PR med migrationer har mergats till `main`:
 
 ```bash
 git switch main
 git pull --ff-only origin main
-npx supabase db push
+npm run db:push
 ```
 
-Använd `supabase/seed.sql` endast för lokal demo- och testdata, inte för riktig
-kampanjdata.
+Ändra inte tabeller, RLS-policyer, triggers, funktioner eller vyer direkt i remote
+Supabase Dashboard när migrationer används. Lägg schemaändringar i
+`supabase/migrations/` och låt dem gå via PR.
+
+`supabase/.temp/` ska inte committas.
+
+## Viktiga sidor
+
+- `/signup` - skapa konto.
+- `/signup/success` - bekräftelse efter registrering.
+- `/login` - logga in.
+- `/forgot-password` - återställ lösenord.
+- `/dashboard` - skapa organisation och hantera kampanjer.
+- `/profile` - konto/profil.
+- `/t/[slug]` - publikt transparensmeddelande.
+- `/ttpa` - information om TTPA.
+- `/privacy` - behandling av personuppgifter.
+- `/cookies` - användning av kakor.
+- `/open-source` - öppen källkod och hur man bidrar.
+
+## Arbetsflöde med git
+
+Håll `main` deploybar. Skapa en branch per ändring:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git switch -c feature/my-change
+```
+
+Kör relevanta kontroller innan PR:
+
+```bash
+npm run build
+```
+
+Pusha och öppna PR:
+
+```bash
+git add .
+git commit -m "Describe the change"
+git push -u origin feature/my-change
+```
+
+Efter merge:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git branch -d feature/my-change
+```
+
+## Bidra
+
+Källkoden finns publikt på GitHub:
+
+```text
+https://github.com/Goseimyr/openTTPA
+```
+
+Du kan bidra genom att öppna issues, föreslå förbättringar, förbättra
+dokumentation eller skicka pull requests.
+
+Projektet är licensierat enligt GNU General Public License version 3. Se
+`LICENSE`.
 
 ## TTPA-källor
 
-Mediemyndigheten anger att politisk reklam ska ha tydlig märkning och ett transparensmeddelande med bland annat sponsor, kontaktuppgifter, publiceringsperiod, ersättning, medlens ursprung, beräkningsmetod, koppling till val eller regleringsprocess, targeting/annonsleverans, samtyckesåterkallelse och anmälningsväg. Sidan ska hållas uppdaterad, vara maskinläsbar vid elektronisk publicering och tillgänglig.
+Läs alltid primärkällorna innan tjänsten används i produktion:
 
-Läs alltid de primära källorna innan produktion: Mediemyndighetens vägledning, EU-förordning 2024/900 och genomförandeförordning 2025/1410.
+- Mediemyndighetens information om TTPA.
+- EU-förordning 2024/900.
+- EU-kommissionens riktlinjer för genomförande av förordningen.
+- EU-kommissionens genomförandeförordning 2025/1410.
+- Lag (2025:1408) med kompletterande bestämmelser till EU:s förordning om politisk reklam.
+- Förordning (2025:1410) med kompletterande bestämmelser till EU:s förordning om politisk reklam.
+
+OpenTTPA är ett verktyg för att skapa och publicera transparensmeddelanden. Den
+som publicerar eller använder informationen ansvarar själv för att uppgifterna är
+korrekta, fullständiga och uppfyller tillämpliga rättsliga krav. OpenTTPA tar
+inte juridiskt ansvar för publicerad information.
