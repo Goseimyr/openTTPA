@@ -83,5 +83,10 @@ export type Organization = {
   name: string;
   org_number: string | null;
   website: string | null;
+  legal_form: string | null;
+  registered_name: string | null;
+  email: string | null;
+  address: string | null;
+  establishment: string | null;
   created_at: string;
 };
