@@ -3,7 +3,7 @@
 import { saveCampaign } from "@/app/dashboard/actions";
 import type { Campaign, Organization } from "@/lib/types";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   campaign?: Campaign | null;
@@ -14,9 +14,13 @@ type Props = {
 
 export function CampaignForm({ campaign, organizations, message, selectedOrganizationId }: Props) {
   const defaultOrganizationId = campaign?.organization_id || selectedOrganizationId || organizations[0]?.id;
+  const [currentOrganizationId, setCurrentOrganizationId] = useState(defaultOrganizationId);
+  const [sponsorSameAsOrganization, setSponsorSameAsOrganization] = useState(false);
+  const [controllingEntitySameAsOrganization, setControllingEntitySameAsOrganization] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentOrganization = organizations.find((organization) => organization.id === currentOrganizationId);
 
   useEffect(() => {
     if (!defaultOrganizationId) return;
@@ -28,6 +32,7 @@ export function CampaignForm({ campaign, organizations, message, selectedOrganiz
   }, [defaultOrganizationId]);
 
   function handleOrganizationChange(organizationId: string) {
+    setCurrentOrganizationId(organizationId);
     window.dispatchEvent(
       new CustomEvent("openttpa:organization-change", {
         detail: { organizationId }
@@ -45,6 +50,12 @@ export function CampaignForm({ campaign, organizations, message, selectedOrganiz
     <form className="panel grid" action={saveCampaign}>
       {message ? <p className="error">{message}</p> : null}
       <input type="hidden" name="id" value={campaign?.id || ""} />
+      <input type="hidden" name="sponsor_same_as_organization" value={sponsorSameAsOrganization ? "on" : ""} />
+      <input
+        type="hidden"
+        name="controlling_entity_same_as_organization"
+        value={controllingEntitySameAsOrganization ? "on" : ""}
+      />
 
       <div className="grid two">
         <label>
@@ -83,11 +94,19 @@ export function CampaignForm({ campaign, organizations, message, selectedOrganiz
         </label>
       </div>
 
-      <h2>Sponsor och utgivare</h2>
+      <h2>Sponsor</h2>
+      <label className="checkbox-row">
+        <input
+          type="checkbox"
+          checked={sponsorSameAsOrganization}
+          onChange={(event) => setSponsorSameAsOrganization(event.target.checked)}
+        />
+        Samma som organisation
+      </label>
       <div className="grid two">
         <label>
           Sponsorns typ
-          <select name="sponsor_type" defaultValue={campaign?.sponsor_type || ""}>
+          <select name="sponsor_type" defaultValue={campaign?.sponsor_type || ""} disabled={sponsorSameAsOrganization}>
             <option value="">Välj typ</option>
             <option value="juridisk_person">Juridisk person</option>
             <option value="fysisk_person">Fysisk person</option>
@@ -96,50 +115,123 @@ export function CampaignForm({ campaign, organizations, message, selectedOrganiz
         </label>
         <label>
           Sponsorns identitet
-          <input name="sponsor_name" defaultValue={campaign?.sponsor_name || ""} required />
+          <input
+            name="sponsor_name"
+            defaultValue={campaign?.sponsor_name || ""}
+            placeholder={sponsorSameAsOrganization ? currentOrganization?.name : undefined}
+            disabled={sponsorSameAsOrganization}
+            required={!sponsorSameAsOrganization}
+          />
         </label>
         <label>
           Registrerat namn, om annat
-          <input name="sponsor_registered_name" defaultValue={campaign?.sponsor_registered_name || ""} />
+          <input
+            name="sponsor_registered_name"
+            defaultValue={campaign?.sponsor_registered_name || ""}
+            placeholder={sponsorSameAsOrganization ? currentOrganization?.registered_name || undefined : undefined}
+            disabled={sponsorSameAsOrganization}
+          />
         </label>
         <label>
           Sponsorns e-postadress
-          <input name="sponsor_email" type="email" defaultValue={campaign?.sponsor_email || ""} />
+          <input
+            name="sponsor_email"
+            type="email"
+            defaultValue={campaign?.sponsor_email || ""}
+            placeholder={sponsorSameAsOrganization ? currentOrganization?.email || undefined : undefined}
+            disabled={sponsorSameAsOrganization}
+          />
         </label>
         <label>
           Sponsorns kontaktuppgifter
-          <input name="sponsor_contact" defaultValue={campaign?.sponsor_contact || ""} required />
+          <input
+            name="sponsor_contact"
+            defaultValue={campaign?.sponsor_contact || ""}
+            placeholder={sponsorSameAsOrganization ? currentOrganization?.website || currentOrganization?.name : undefined}
+            disabled={sponsorSameAsOrganization}
+            required={!sponsorSameAsOrganization}
+          />
         </label>
         <label>
           Sponsorns postadress
-          <input name="sponsor_address" defaultValue={campaign?.sponsor_address || ""} />
+          <input
+            name="sponsor_address"
+            defaultValue={campaign?.sponsor_address || ""}
+            placeholder={sponsorSameAsOrganization ? currentOrganization?.address || undefined : undefined}
+            disabled={sponsorSameAsOrganization}
+          />
         </label>
         <label>
           Etableringsort, om annan än postadress
-          <input name="sponsor_establishment" defaultValue={campaign?.sponsor_establishment || ""} />
+          <input
+            name="sponsor_establishment"
+            defaultValue={campaign?.sponsor_establishment || ""}
+            placeholder={sponsorSameAsOrganization ? currentOrganization?.establishment || undefined : undefined}
+            disabled={sponsorSameAsOrganization}
+          />
         </label>
         <label>
           Relevant registreringsnummer
-          <input name="sponsor_registration_number" defaultValue={campaign?.sponsor_registration_number || ""} />
+          <input
+            name="sponsor_registration_number"
+            defaultValue={campaign?.sponsor_registration_number || ""}
+            placeholder={sponsorSameAsOrganization ? currentOrganization?.org_number || undefined : undefined}
+            disabled={sponsorSameAsOrganization}
+          />
         </label>
       </div>
+
+      <h2>Kontrollerande enhet</h2>
+      <label className="checkbox-row">
+        <input
+          type="checkbox"
+          checked={controllingEntitySameAsOrganization}
+          onChange={(event) => setControllingEntitySameAsOrganization(event.target.checked)}
+        />
+        Samma som organisation
+      </label>
       <div className="grid two">
         <label>
           Eventuell kontrollerande enhet
-          <input name="controlling_entity" defaultValue={campaign?.controlling_entity || ""} />
+          <input
+            name="controlling_entity"
+            defaultValue={campaign?.controlling_entity || ""}
+            placeholder={controllingEntitySameAsOrganization ? currentOrganization?.name : undefined}
+            disabled={controllingEntitySameAsOrganization}
+          />
         </label>
         <label>
           Kontrollerande enhets e-postadress
-          <input name="controlling_entity_email" type="email" defaultValue={campaign?.controlling_entity_email || ""} />
+          <input
+            name="controlling_entity_email"
+            type="email"
+            defaultValue={campaign?.controlling_entity_email || ""}
+            placeholder={controllingEntitySameAsOrganization ? currentOrganization?.email || undefined : undefined}
+            disabled={controllingEntitySameAsOrganization}
+          />
         </label>
         <label>
           Kontrollerande enhets postadress
-          <input name="controlling_entity_address" defaultValue={campaign?.controlling_entity_address || ""} />
+          <input
+            name="controlling_entity_address"
+            defaultValue={campaign?.controlling_entity_address || ""}
+            placeholder={controllingEntitySameAsOrganization ? currentOrganization?.address || undefined : undefined}
+            disabled={controllingEntitySameAsOrganization}
+          />
         </label>
         <label>
           Kontrollerande enhets etableringsort
-          <input name="controlling_entity_establishment" defaultValue={campaign?.controlling_entity_establishment || ""} />
+          <input
+            name="controlling_entity_establishment"
+            defaultValue={campaign?.controlling_entity_establishment || ""}
+            placeholder={controllingEntitySameAsOrganization ? currentOrganization?.establishment || undefined : undefined}
+            disabled={controllingEntitySameAsOrganization}
+          />
         </label>
+      </div>
+
+      <h2>Utgivare</h2>
+      <div className="grid two">
         <label>
           Utgivare
           <input name="publisher_name" defaultValue={campaign?.publisher_name || ""} />

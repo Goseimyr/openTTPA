@@ -57,8 +57,28 @@ export default async function OrganizationPage({
 
       <section className="grid three" style={{ margin: "20px 0" }}>
         <div className="card">
+          <strong>Juridisk form</strong>
+          <p className="muted">{formatLegalForm(organization.legal_form)}</p>
+        </div>
+        <div className="card">
           <strong>Organisationsnummer</strong>
           <p className="muted">{organization.org_number || "Ej angivet"}</p>
+        </div>
+        <div className="card">
+          <strong>Registrerat namn</strong>
+          <p className="muted">{organization.registered_name || "Ej angivet"}</p>
+        </div>
+        <div className="card">
+          <strong>E-postadress</strong>
+          <p className="muted">{organization.email || "Ej angiven"}</p>
+        </div>
+        <div className="card">
+          <strong>Postadress</strong>
+          <p className="muted">{organization.address || "Ej angiven"}</p>
+        </div>
+        <div className="card">
+          <strong>Etableringsort</strong>
+          <p className="muted">{organization.establishment || "Ej angiven"}</p>
         </div>
         <div className="card">
           <strong>Webbplats</strong>
@@ -147,6 +167,13 @@ function statusLabel(status: string) {
   if (status === "active") return "Aktuell";
   if (status === "archived") return "Arkiverad";
   return "Utkast";
+}
+
+function formatLegalForm(value: string | null) {
+  if (value === "juridisk_person") return "Juridisk person";
+  if (value === "fysisk_person") return "Fysisk person";
+  if (value === "kampanjorganisation") return "Politisk kampanjorganisation utan juridisk personlighet";
+  return "Ej angiven";
 }
 
 function normalizeOrganization(value: Organization | Organization[] | null) {

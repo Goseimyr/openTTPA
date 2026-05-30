@@ -20,7 +20,12 @@ async function requireUser() {
 const organizationSchema = z.object({
   name: z.string().min(1, "Organisationens namn saknas."),
   org_number: z.string().optional(),
-  website: z.string().url("Webbplatsen måste vara en giltig URL (börja med https://).").optional().or(z.literal(""))
+  website: z.string().url("Webbplatsen måste vara en giltig URL (börja med https://).").optional().or(z.literal("")),
+  legal_form: z.string().optional(),
+  registered_name: z.string().optional(),
+  email: z.string().email("E-postadressen måste vara giltig.").optional().or(z.literal("")),
+  address: z.string().optional(),
+  establishment: z.string().optional()
 });
 
 const optionalUrl = z.string().url("Länken måste vara en giltig URL.").optional().or(z.literal(""));
@@ -117,7 +122,12 @@ export async function createOrganization(formData: FormData) {
   const raw = {
     name: String(formData.get("name") || "").trim(),
     org_number: String(formData.get("org_number") || "").trim(),
-    website: String(formData.get("website") || "").trim()
+    website: String(formData.get("website") || "").trim(),
+    legal_form: String(formData.get("legal_form") || "").trim(),
+    registered_name: String(formData.get("registered_name") || "").trim(),
+    email: String(formData.get("email") || "").trim(),
+    address: String(formData.get("address") || "").trim(),
+    establishment: String(formData.get("establishment") || "").trim()
   };
 
   const result = organizationSchema.safeParse(raw);
@@ -126,12 +136,17 @@ export async function createOrganization(formData: FormData) {
     redirect(`/dashboard?message=${encodeURIComponent(message)}`);
   }
 
-  const { name, org_number, website } = result.data;
+  const { name, org_number, website, legal_form, registered_name, email, address, establishment } = result.data;
 
   const { data, error } = await supabase.rpc("create_organization_with_owner", {
     organization_name: name,
     organization_org_number: org_number || null,
-    organization_website: website || null
+    organization_website: website || null,
+    organization_legal_form: legal_form || null,
+    organization_registered_name: registered_name || null,
+    organization_email: email || null,
+    organization_address: address || null,
+    organization_establishment: establishment || null
   });
 
   if (error || !data) {
@@ -158,7 +173,12 @@ export async function updateOrganization(formData: FormData) {
   const raw = {
     name: String(formData.get("name") || "").trim(),
     org_number: String(formData.get("org_number") || "").trim(),
-    website: String(formData.get("website") || "").trim()
+    website: String(formData.get("website") || "").trim(),
+    legal_form: String(formData.get("legal_form") || "").trim(),
+    registered_name: String(formData.get("registered_name") || "").trim(),
+    email: String(formData.get("email") || "").trim(),
+    address: String(formData.get("address") || "").trim(),
+    establishment: String(formData.get("establishment") || "").trim()
   };
 
   const result = organizationSchema.safeParse(raw);
@@ -169,13 +189,18 @@ export async function updateOrganization(formData: FormData) {
     redirect(`/dashboard/organizations/${id}/edit?message=${encodeURIComponent(message)}`);
   }
 
-  const { name, org_number, website } = result.data;
+  const { name, org_number, website, legal_form, registered_name, email, address, establishment } = result.data;
   const { error } = await supabase
     .from("organizations")
     .update({
       name,
       org_number: org_number || null,
-      website: website || null
+      website: website || null,
+      legal_form: legal_form || null,
+      registered_name: registered_name || null,
+      email: email || null,
+      address: address || null,
+      establishment: establishment || null
     })
     .eq("id", id);
 
@@ -264,6 +289,38 @@ export async function saveCampaign(formData: FormData) {
     complaint_url: String(formData.get("complaint_url") || "").trim(),
     ad_channels: String(formData.get("ad_channels") || "")
   };
+  const sponsorSameAsOrganization = formData.get("sponsor_same_as_organization") === "on";
+  const controllingEntitySameAsOrganization = formData.get("controlling_entity_same_as_organization") === "on";
+
+  if (sponsorSameAsOrganization || controllingEntitySameAsOrganization) {
+    const { data: organization } = await supabase
+      .from("organizations")
+      .select("name, org_number, website, legal_form, registered_name, email, address, establishment")
+      .eq("id", raw.organization_id)
+      .maybeSingle();
+
+    if (organization) {
+      const organizationContact = organization.website || organization.name;
+
+      if (sponsorSameAsOrganization) {
+        raw.sponsor_type = organization.legal_form || "juridisk_person";
+        raw.sponsor_name = organization.name;
+        raw.sponsor_contact = organizationContact;
+        raw.sponsor_registration_number = organization.org_number || "";
+        raw.sponsor_registered_name = organization.registered_name || "";
+        raw.sponsor_email = organization.email || "";
+        raw.sponsor_address = organization.address || "";
+        raw.sponsor_establishment = organization.establishment || "";
+      }
+
+      if (controllingEntitySameAsOrganization) {
+        raw.controlling_entity = organization.name;
+        raw.controlling_entity_email = organization.email || "";
+        raw.controlling_entity_address = organization.address || "";
+        raw.controlling_entity_establishment = organization.establishment || "";
+      }
+    }
+  }
 
   const backUrl = id ? `/dashboard/campaigns/${id}` : "/dashboard/campaigns/new";
   const result = campaignSchema.safeParse(raw);
