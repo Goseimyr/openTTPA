@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CampaignForm } from "@/components/CampaignForm";
 import { publicCampaignUrl } from "@/lib/format";
-import { createSupabaseServerClient } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 import type { Campaign, Organization } from "@/lib/types";
 
 export default async function EditCampaignPage({
@@ -12,7 +12,7 @@ export default async function EditCampaignPage({
   searchParams: Promise<{ message?: string }>;
 }) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();

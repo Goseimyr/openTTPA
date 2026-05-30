@@ -1,14 +1,15 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { formatDate, formatMoney, publicCampaignUrl } from "@/lib/format";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { createClient } from "@/utils/supabase/server";
 import type { Campaign } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function TransparencyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from("campaigns")
     .select("*, organizations(*)")
@@ -97,7 +98,7 @@ function Info({ label, value, href }: { label: string; value: string; href?: str
 async function recordView(campaignId: string, slug: string) {
   try {
     const headerStore = await headers();
-    const supabase = createSupabaseAdminClient();
+    const supabase = createAdminClient();
     await supabase.from("transparency_views").insert({
       campaign_id: campaignId,
       slug,

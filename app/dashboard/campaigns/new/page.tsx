@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { CampaignForm } from "@/components/CampaignForm";
-import { createSupabaseServerClient } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 import type { Organization } from "@/lib/types";
 
 export default async function NewCampaignPage({
@@ -9,7 +9,7 @@ export default async function NewCampaignPage({
   searchParams: Promise<{ message?: string }>;
 }) {
   const params = await searchParams;
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
