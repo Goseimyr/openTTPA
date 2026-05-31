@@ -87,7 +87,7 @@ export default async function TransparencyPage({ params }: { params: Promise<{ s
           <Info label="5. Belopp och andra förmåner för reklammeddelandet" value={formatAmount(campaign.amount_message, campaign.in_kind_message, campaign.amount_currency)} />
           <Info label="6. Belopp och andra förmåner för kampanjen" value={formatAmount(campaign.amount_campaign, campaign.in_kind_campaign, campaign.amount_currency)} />
           <Info label="7. Källa till belopp och andra förmåner" value={formatFunding(campaign)} />
-          <Info label="8. Beräkningsmetod" value={joinValues([campaign.calculation_method, campaign.amount_basis, campaign.amount_includes_vat === null ? null : campaign.amount_includes_vat ? "Beloppen inkluderar moms." : "Beloppen anges utan moms."])} />
+          <Info label="8. Metod och underlag för att beräkna beloppen" value={joinValues([campaign.calculation_method, campaign.amount_basis, campaign.amount_includes_vat === null ? null : campaign.amount_includes_vat ? "Beloppen inkluderar moms." : "Beloppen anges utan moms."])} />
           <Info
             label="9. Koppling till val, folkomröstning eller regleringsprocess"
             value={formatProcess(campaign)}
@@ -97,11 +97,13 @@ export default async function TransparencyPage({ params }: { params: Promise<{ s
             value={campaign.official_info_url || "Ej angiven"}
             href={campaign.official_info_url || undefined}
           />
-          <Info
-            label="11. Länk till den europeiska databasen för politiska reklammeddelanden online"
-            value={campaign.eu_database_url || "Ej angiven"}
-            href={campaign.eu_database_url || undefined}
-          />
+          {campaign.eu_database_url ? (
+            <Info
+              label="11. Länk till den europeiska databasen för politiska reklammeddelanden online"
+              value={campaign.eu_database_url}
+              href={campaign.eu_database_url}
+            />
+          ) : null}
           <Info
             label="12. Anmäl politiska reklammeddelanden som eventuellt inte uppfyller kraven"
             value={campaign.complaint_contact}
@@ -173,7 +175,7 @@ function formatAmount(amount: number | null, inKind: number | null, currency: st
 
 function formatFunding(campaign: Campaign) {
   return joinValues([
-    campaign.funds_origin,
+    campaign.funds_origin ? `Kompletterande information: ${campaign.funds_origin}.` : null,
     campaign.funds_source_type ? `Källa: ${formatChoice(campaign.funds_source_type)}.` : null,
     campaign.funds_source_region ? `Geografiskt ursprung: ${formatChoice(campaign.funds_source_region)}.` : null
   ]);

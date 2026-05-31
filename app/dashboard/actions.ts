@@ -37,11 +37,11 @@ const campaignSchema = z.object({
   organization_id: z.string().uuid("Ogiltig organisation."),
   status: z.enum(["draft", "active", "archived"]),
   language: z.string().min(1, "Språk saknas."),
-  sponsor_type: optionalText,
+  sponsor_type: z.string().min(1, "Sponsorns typ saknas."),
   sponsor_registered_name: optionalText,
   sponsor_name: z.string().min(1, "Sponsorns namn saknas."),
-  sponsor_email: optionalText,
-  sponsor_address: optionalText,
+  sponsor_email: z.string().min(1, "Sponsorns e-postadress saknas."),
+  sponsor_address: z.string().min(1, "Sponsorns postadress saknas."),
   sponsor_establishment: optionalText,
   sponsor_registration_number: optionalText,
   sponsor_contact: z.string().min(1, "Sponsorns kontaktuppgifter saknas."),
@@ -58,16 +58,16 @@ const campaignSchema = z.object({
   publisher_contact: z.string().optional(),
   period_start: z.string().min(1, "Startdatum saknas."),
   period_end: z.string().min(1, "Slutdatum saknas."),
-  amount_message: z.string().optional(),
-  amount_campaign: z.string().optional(),
+  amount_message: z.string().min(1, "Belopp för reklammeddelandet saknas."),
+  amount_campaign: z.string().min(1, "Belopp för kampanjen saknas."),
   amount_currency: z.string().min(1, "Valuta saknas."),
   in_kind_message: z.string().optional(),
   in_kind_campaign: z.string().optional(),
   amount_basis: optionalText,
   amount_includes_vat: optionalText,
-  funds_origin: z.string().min(1, "Ursprung för ekonomiska medel saknas."),
-  funds_source_type: optionalText,
-  funds_source_region: optionalText,
+  funds_origin: optionalText,
+  funds_source_type: z.string().min(1, "Finansieringskälla saknas."),
+  funds_source_region: z.string().min(1, "Finansieringens geografiska ursprung saknas."),
   calculation_method: z.string().min(1, "Beräkningsmetod saknas."),
   linked_process: z.string().optional(),
   process_type: optionalText,
@@ -104,7 +104,7 @@ const campaignSchema = z.object({
   gdpr_controller_contact: optionalText,
   gdpr_rights_url: optionalUrl,
   gdpr_info_url: optionalUrl,
-  complaint_contact: z.string().min(1, "Kontaktuppgifter för klagomål saknas."),
+  complaint_contact: z.string().min(1, "Kontaktperson för anmälan av överträdelse saknas."),
   complaint_url: z
     .string()
     .url("Klagomålslänk måste vara en giltig URL.")
@@ -291,8 +291,15 @@ export async function saveCampaign(formData: FormData) {
   };
   const sponsorSameAsOrganization = formData.get("sponsor_same_as_organization") === "on";
   const controllingEntitySameAsOrganization = formData.get("controlling_entity_same_as_organization") === "on";
+  const payerSameAsOrganization = formData.get("payer_same_as_organization") === "on";
+  const publisherSameAsOrganization = formData.get("publisher_same_as_organization") === "on";
 
-  if (sponsorSameAsOrganization || controllingEntitySameAsOrganization) {
+  if (
+    sponsorSameAsOrganization ||
+    controllingEntitySameAsOrganization ||
+    payerSameAsOrganization ||
+    publisherSameAsOrganization
+  ) {
     const { data: organization } = await supabase
       .from("organizations")
       .select("name, org_number, website, legal_form, registered_name, email, address, establishment")
@@ -318,6 +325,19 @@ export async function saveCampaign(formData: FormData) {
         raw.controlling_entity_email = organization.email || "";
         raw.controlling_entity_address = organization.address || "";
         raw.controlling_entity_establishment = organization.establishment || "";
+      }
+
+      if (payerSameAsOrganization) {
+        raw.payer_name = organization.name;
+        raw.payer_registered_name = organization.registered_name || "";
+        raw.payer_email = organization.email || "";
+        raw.payer_address = organization.address || "";
+        raw.payer_establishment = organization.establishment || "";
+      }
+
+      if (publisherSameAsOrganization) {
+        raw.publisher_name = organization.name;
+        raw.publisher_contact = organizationContact;
       }
     }
   }
@@ -435,7 +455,7 @@ export async function saveCampaign(formData: FormData) {
     in_kind_campaign: parseAmount(in_kind_campaign),
     amount_basis: amount_basis || null,
     amount_includes_vat: amount_includes_vat === "on" ? true : null,
-    funds_origin,
+    funds_origin: funds_origin || null,
     funds_source_type: funds_source_type || null,
     funds_source_region: funds_source_region || null,
     calculation_method,
@@ -482,10 +502,20 @@ export async function saveCampaign(formData: FormData) {
     const slugBase = slugify(name || "kampanj");
     const slug = `${slugBase}-${randomUUID().slice(0, 8)}`;
     const { error } = await supabase.from("campaigns").insert({ ...payload, slug });
-    if (error) redirect(`/dashboard/campaigns/new?message=${encodeURIComponent("Kampanjen kunde inte skapas.")}`);
+    if (error) {
+      console.error("Failed to create campaign", { organizationId: organization_id, error });
+      redirect(
+        `/dashboard/campaigns/new?organization=${encodeURIComponent(organization_id)}&message=${encodeURIComponent(
+          "Kampanjen kunde inte skapas."
+        )}`
+      );
+    }
   } else {
     const { error } = await supabase.from("campaigns").update(payload).eq("id", id);
-    if (error) redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Kampanjen kunde inte sparas.")}`);
+    if (error) {
+      console.error("Failed to update campaign", { campaignId: id, organizationId: organization_id, error });
+      redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Kampanjen kunde inte sparas.")}`);
+    }
   }
 
   revalidatePath("/dashboard");
