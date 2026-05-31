@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { normalizeOrganization } from "@/lib/format";
+import { getOrganizationContacts } from "@/lib/organizationContacts";
 import { CampaignForm } from "@/components/CampaignForm";
 import { createClient } from "@/utils/supabase/server";
 import type { Organization } from "@/lib/types";
@@ -33,6 +34,7 @@ export default async function NewCampaignPage({
   const selectedOrganizationId = organizations.some((organization) => organization.id === params.organization)
     ? params.organization
     : organizations[0].id;
+  const organizationContacts = await getOrganizationContacts(organizations.map((organization) => organization.id), user);
 
   return (
     <main className="shell" style={{ paddingBottom: 64 }}>
@@ -40,6 +42,8 @@ export default async function NewCampaignPage({
       <p className="lead">Fyll i uppgifterna som ska publiceras i transparensmeddelandet.</p>
       <CampaignForm
         organizations={organizations}
+        organizationContacts={organizationContacts}
+        currentUserId={user.id}
         message={params.message}
         selectedOrganizationId={selectedOrganizationId}
       />

@@ -73,7 +73,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
         includes_vat: campaign.amount_includes_vat
       },
       funding: {
-        origin: campaign.funds_origin,
+        additional_information: campaign.funds_origin,
         source_type: campaign.funds_source_type,
         source_region: campaign.funds_source_region
       },

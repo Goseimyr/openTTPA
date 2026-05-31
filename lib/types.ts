@@ -35,7 +35,7 @@ export type Campaign = {
   in_kind_campaign: number | null;
   amount_basis: string | null;
   amount_includes_vat: boolean | null;
-  funds_origin: string;
+  funds_origin: string | null;
   funds_source_type: string | null;
   funds_source_region: string | null;
   calculation_method: string;
@@ -89,4 +89,11 @@ export type Organization = {
   address: string | null;
   establishment: string | null;
   created_at: string;
+};
+
+export type OrganizationContact = {
+  organization_id: string;
+  user_id: string;
+  email: string;
+  role: string | null;
 };

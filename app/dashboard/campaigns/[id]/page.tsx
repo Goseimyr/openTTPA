@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CampaignForm } from "@/components/CampaignForm";
 import { normalizeOrganization, publicCampaignUrl } from "@/lib/format";
+import { getOrganizationContacts } from "@/lib/organizationContacts";
 import { createClient } from "@/utils/supabase/server";
 import type { Campaign, Organization } from "@/lib/types";
 
@@ -27,6 +28,7 @@ export default async function EditCampaignPage({
   const organizations = (memberships || [])
     .map((membership) => normalizeOrganization(membership.organizations))
     .filter(Boolean) as Organization[];
+  const organizationContacts = await getOrganizationContacts(organizations.map((organization) => organization.id), user);
 
   const { data: campaign } = await supabase.from("campaigns").select("*").eq("id", id).single();
   if (!campaign) notFound();
@@ -37,8 +39,13 @@ export default async function EditCampaignPage({
       <p className="lead">
         Publik sida: <a href={publicCampaignUrl((campaign as Campaign).slug)}>{publicCampaignUrl((campaign as Campaign).slug)}</a>
       </p>
-      <CampaignForm campaign={campaign as Campaign} organizations={organizations} message={query.message} />
+      <CampaignForm
+        campaign={campaign as Campaign}
+        organizations={organizations}
+        organizationContacts={organizationContacts}
+        currentUserId={user.id}
+        message={query.message}
+      />
     </main>
   );
 }
-
