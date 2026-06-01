@@ -13,13 +13,19 @@ export default async function TransparencyPage({ params }: { params: Promise<{ s
     .from("campaigns")
     .select("*, organizations(*)")
     .eq("slug", slug)
-    .in("status", ["active", "archived"])
     .single();
 
   if (!data) notFound();
 
   const campaign = data as Campaign;
-  await recordView(campaign.id, slug);
+  if (campaign.status === "draft") {
+    const canPreview = await canPreviewCampaign(supabase, campaign);
+    if (!canPreview) notFound();
+  }
+
+  if (campaign.status !== "draft") {
+    await recordView(campaign.id, slug);
+  }
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -46,6 +52,9 @@ export default async function TransparencyPage({ params }: { params: Promise<{ s
           Detta är ett transparensmeddelande för politisk reklam. Informationen lämnas på samma
           språk som kampanjens registrerade språk: {campaign.language}.
         </p>
+        {campaign.status === "draft" ? (
+          <p className="notice">Detta är en förhandsvisning av ett utkast och är inte publicerat.</p>
+        ) : null}
         <p>
           <a href={publicCampaignJsonUrl(campaign.slug)}>Maskinläsbar version</a>
         </p>
@@ -223,6 +232,23 @@ function formatGdpr(campaign: Campaign) {
     campaign.gdpr_rights_url ? `Utöva dataskyddsrättigheter: ${campaign.gdpr_rights_url}.` : null,
     campaign.gdpr_info_url ? `Dataskyddsinformation: ${campaign.gdpr_info_url}.` : null
   ]);
+}
+
+async function canPreviewCampaign(supabase: Awaited<ReturnType<typeof createClient>>, campaign: Campaign) {
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) return false;
+
+  const { data } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .eq("organization_id", campaign.organization_id)
+    .maybeSingle();
+
+  return Boolean(data);
 }
 
 async function recordView(campaignId: string, slug: string) {

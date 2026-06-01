@@ -55,29 +55,26 @@ export default async function DashboardPage({
 
   if (organizations.length === 0 || params.new === "organization") {
     return (
-      <main className="shell">
-        <section className="grid two" style={{ alignItems: "start", paddingTop: 40 }}>
-          <div>
-            <h1>Skapa organisation</h1>
-            <p className="lead">
-              Organisationen håller ihop sponsorer, kampanjer och användare. Du kan lägga till fler
-              kampanjer efter detta steg.
-            </p>
-            {organizations.length > 0 ? (
-              <p className="muted">
-                <Link href="/dashboard">Tillbaka till organisationer</Link>
-              </p>
-            ) : null}
-          </div>
-          <form className="panel grid" action={createOrganization}>
-            {params.message ? <p className="form-message">{params.message}</p> : null}
+      <main className="shell" style={{ paddingBottom: 64 }}>
+        <section style={{ paddingTop: 28 }}>
+          <h1>Skapa ny organisation</h1>
+          <p className="lead">
+            Organisationen håller ihop sponsorer, kampanjer och användare. Du kan lägga till fler kampanjer
+            efter detta steg.
+          </p>
+        </section>
+
+        <form className="card organization-details" action={createOrganization} style={{ margin: "20px 0" }}>
+          <h2>Organisation</h2>
+          {params.message ? <p className="form-message">{params.message}</p> : null}
+          <div className="organization-detail-grid">
             <label>
-              Organisationsnamn
+              Namn
               <input name="name" required />
             </label>
             <label>
-              Organisationsnummer
-              <input name="org_number" />
+              Registrerat namn, om annat
+              <input name="registered_name" />
             </label>
             <label>
               Juridisk form
@@ -89,8 +86,8 @@ export default async function DashboardPage({
               </select>
             </label>
             <label>
-              Registrerat namn, om annat
-              <input name="registered_name" />
+              Organisationsnummer
+              <input name="org_number" />
             </label>
             <label>
               E-postadress
@@ -101,16 +98,23 @@ export default async function DashboardPage({
               <input name="address" />
             </label>
             <label>
-              Etableringsort, om annan än postadress
-              <input name="establishment" />
-            </label>
-            <label>
               Webbplats
               <input name="website" type="url" placeholder="https://..." />
             </label>
-            <button type="submit">Skapa organisation</button>
-          </form>
-        </section>
+            <label>
+              Etableringsort, om annan än postadress
+              <input name="establishment" />
+            </label>
+          </div>
+          <div className="actions card-actions">
+            <button type="submit">Skapa ny organisation</button>
+            {organizations.length > 0 ? (
+              <Link className="button secondary" href="/dashboard">
+                Avbryt
+              </Link>
+            ) : null}
+          </div>
+        </form>
       </main>
     );
   }

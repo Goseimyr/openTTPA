@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { normalizeOrganization } from "@/lib/format";
 import { updateOrganization } from "@/app/dashboard/actions";
 import { createClient } from "@/utils/supabase/server";
@@ -31,22 +32,23 @@ export default async function EditOrganizationPage({
 
   return (
     <main className="shell" style={{ paddingBottom: 64 }}>
-      <section className="grid two" style={{ alignItems: "start", paddingTop: 40 }}>
-        <div>
-          <h1>Redigera organisation</h1>
-          <p className="lead">Uppdatera grunduppgifterna för {organization.name}.</p>
-        </div>
+      <section style={{ paddingTop: 28 }}>
+        <h1>Redigera organisation</h1>
+        <p className="lead">Uppdatera grunduppgifterna för {organization.name}.</p>
+      </section>
 
-        <form className="panel grid" action={updateOrganization}>
-          <input type="hidden" name="id" value={organization.id} />
-          {query.message ? <p className="form-message">{query.message}</p> : null}
+      <form className="card organization-details" action={updateOrganization} style={{ margin: "20px 0" }}>
+        <input type="hidden" name="id" value={organization.id} />
+        <h2>Organisation</h2>
+        {query.message ? <p className="form-message">{query.message}</p> : null}
+        <div className="organization-detail-grid">
           <label>
-            Organisationsnamn
+            Namn
             <input name="name" defaultValue={organization.name} required />
           </label>
           <label>
-            Organisationsnummer
-            <input name="org_number" defaultValue={organization.org_number || ""} />
+            Registrerat namn, om annat
+            <input name="registered_name" defaultValue={organization.registered_name || ""} />
           </label>
           <label>
             Juridisk form
@@ -58,8 +60,8 @@ export default async function EditOrganizationPage({
             </select>
           </label>
           <label>
-            Registrerat namn, om annat
-            <input name="registered_name" defaultValue={organization.registered_name || ""} />
+            Organisationsnummer
+            <input name="org_number" defaultValue={organization.org_number || ""} />
           </label>
           <label>
             E-postadress
@@ -70,21 +72,21 @@ export default async function EditOrganizationPage({
             <input name="address" defaultValue={organization.address || ""} />
           </label>
           <label>
-            Etableringsort, om annan än postadress
-            <input name="establishment" defaultValue={organization.establishment || ""} />
-          </label>
-          <label>
             Webbplats
             <input name="website" type="url" placeholder="https://..." defaultValue={organization.website || ""} />
           </label>
-          <div className="actions">
-            <button type="submit">Spara organisation</button>
-            <a className="button secondary" href={`/dashboard/organizations/${organization.id}`}>
-              Avbryt
-            </a>
-          </div>
-        </form>
-      </section>
+          <label>
+            Etableringsort, om annan än postadress
+            <input name="establishment" defaultValue={organization.establishment || ""} />
+          </label>
+        </div>
+        <div className="actions card-actions">
+          <button type="submit">Spara organisation</button>
+          <Link className="button secondary" href={`/dashboard/organizations/${organization.id}`}>
+            Avbryt
+          </Link>
+        </div>
+      </form>
     </main>
   );
 }
