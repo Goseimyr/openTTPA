@@ -453,7 +453,7 @@ textarea {
 }
 
 .public-page {
-  padding: 32px 0 72px;
+  padding: 14px 0 72px;
 }
 
 .notice {
@@ -471,12 +471,75 @@ textarea {
 }
 
 .definition dt {
-  color: var(--muted);
+  color: var(--ink);
   font-weight: 800;
 }
 
 .definition dd {
   margin: 0;
+}
+
+.transparency-notice {
+  margin-top: 18px;
+}
+
+.public-page .transparency-notice {
+  margin-top: 0;
+}
+
+.transparency-notice dl:last-of-type .definition:last-child {
+  border-bottom: 0;
+}
+
+.transparency-notice-actions {
+  margin-top: 24px;
+}
+
+.transparency-notice h3 {
+  margin: 32px 0 4px;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.template-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.template-list li {
+  padding-left: 4px;
+}
+
+.value-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.value-list div {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.38fr) 1fr;
+  gap: 12px;
+}
+
+.value-list dt {
+  color: var(--text);
+  font-weight: 400;
+}
+
+.value-list dd {
+  margin: 0;
+}
+
+.value-list-compact {
+  gap: 4px;
+}
+
+.value-list-compact div {
+  grid-template-columns: minmax(90px, 0.28fr) 1fr;
+  gap: 8px;
 }
 
 .footer {
@@ -540,7 +603,9 @@ textarea {
   margin-bottom: 8px;
 }
 
-.machine-readable p {
+.permanent-link p,
+.machine-readable p,
+.openttpa-intro p {
   max-width: 760px;
   overflow-wrap: anywhere;
 }
@@ -585,5 +650,10 @@ textarea {
 
   .definition {
     grid-template-columns: 1fr;
+  }
+
+  .value-list div {
+    grid-template-columns: 1fr;
+    gap: 2px;
   }
 }

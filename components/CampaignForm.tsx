@@ -121,37 +121,87 @@ export function CampaignForm({
     const endDate = formatInputDate(addDays(new Date(), 30));
 
     setSponsorDifferentFromOrganization(true);
-    setControllingEntityDifferentFromOrganization(false);
-    setPayerDifferentFromOrganization(false);
-    setPublisherDifferentFromOrganization(false);
-    setProcessLinkExists(false);
-    setTargetingUsed(false);
-    setPriorNonCompliance(false);
+    setControllingEntityDifferentFromOrganization(true);
+    setPayerDifferentFromOrganization(true);
+    setPublisherDifferentFromOrganization(true);
+    setProcessLinkExists(true);
+    setTargetingUsed(true);
+    setPriorNonCompliance(true);
     setComplaintContact(preferredContact);
 
     window.setTimeout(() => {
-      fillField(form, "name", "Testkampanj för transparensmeddelande");
-      fillField(form, "language", "Svenska");
-      fillField(form, "complaint_contact", preferredContact);
-      fillField(form, "sponsor_type", "juridisk_person");
-      fillField(form, "sponsor_name", "Testorganisationen");
-      fillField(form, "sponsor_email", "kontakt@testorganisationen.se");
-      fillField(form, "sponsor_contact", "kontakt@testorganisationen.se");
-      fillField(form, "sponsor_address", "Testgatan 1, 111 11 Stockholm");
-      fillField(form, "sponsor_registration_number", "000000-0000");
-      fillField(form, "period_start", startDate);
-      fillField(form, "period_end", endDate);
-      fillField(form, "amount_message", "10000");
-      fillField(form, "amount_campaign", "50000");
-      fillField(form, "amount_currency", "SEK");
-      fillField(form, "funds_source_type", "privat");
-      fillField(form, "funds_source_region", "inom_eu");
-      fillField(
-        form,
-        "calculation_method",
-        "Beloppen är preliminärt budgeterade utifrån planerade annonsköp och uppskattad produktion."
-      );
-      fillField(form, "funds_origin", "Testdata för lokal utveckling.");
+      fillFields(form, {
+        name: "Testkampanj för transparensmeddelande",
+        language: "Svenska",
+        status: "draft",
+        complaint_contact: preferredContact,
+        sponsor_type: "juridisk_person",
+        sponsor_name: "Testorganisationen",
+        sponsor_registered_name: "Testorganisationen Sverige AB",
+        sponsor_email: "kontakt@testorganisationen.se",
+        sponsor_contact: "https://testorganisationen.se",
+        sponsor_address: "Testgatan 1, 111 11 Stockholm",
+        sponsor_establishment: "",
+        sponsor_registration_number: "000000-0000",
+        controlling_entity: "Testkoncernen AB",
+        controlling_entity_registered_name: "Testkoncernen Sverige AB",
+        controlling_entity_email: "styrning@testkoncernen.se",
+        controlling_entity_address: "Koncernvägen 2, 222 22 Göteborg",
+        controlling_entity_establishment: "",
+        controlling_entity_registration_number: "111111-1111",
+        controlling_entity_contact: "https://testkoncernen.se",
+        payer_name: "Testfinansiären AB",
+        payer_registered_name: "Testfinansiären Sverige AB",
+        payer_email: "ekonomi@testfinansiaren.se",
+        payer_address: "Finansgatan 3, 333 33 Malmö",
+        payer_establishment: "",
+        payer_registration_number: "222222-2222",
+        payer_contact: "https://testfinansiaren.se",
+        publisher_name: "Testutgivaren AB",
+        publisher_contact: "publicering@testutgivaren.se",
+        period_start: startDate,
+        period_end: endDate,
+        amount_message: "10000",
+        amount_campaign: "50000",
+        in_kind_message: "1500",
+        in_kind_campaign: "7500",
+        amount_currency: "SEK",
+        funds_source_type: "privat",
+        funds_source_region: "inom_eu",
+        calculation_method:
+          "Beloppen är preliminärt budgeterade utifrån planerade annonsköp, uppskattad produktion och värdering av andra förmåner.",
+        funds_origin: "Kompletterande testinformation om finansieringen.",
+        process_type: "val",
+        process_level: "lokal",
+        process_name: "Kommunalvalet i testkommunen",
+        process_date: endDate,
+        process_region: "Sverige",
+        official_info_url: "https://www.val.se/",
+        linked_process: "Kampanjen avser att påverka väljare inför ett lokalt val.",
+        targeting_description: "Testkampanjen riktas mot personer i ett avgränsat geografiskt område.",
+        delivery_description: "Annonser visas i sociala medier och på webbsidor under kampanjperioden.",
+        targeting_analysis_methods: "Geografisk segmentering och analys av tidigare annonsinteraktioner.",
+        targeting_audience_groups: "Personer över 18 år i testkommunen med intresse för samhällsfrågor.",
+        targeting_personal_data_categories: "Ålder, ungefärlig plats och intressekategorier.",
+        targeting_logic:
+          "Mottagare inkluderas baserat på geografiskt område och exkluderas om de ligger utanför målområdet.",
+        targeting_ai_systems: "Plattformens automatiska optimering av annonsleverans används.",
+        targeting_policy_url: "https://example.se/inriktning-policy",
+        targeting_impressions: "12000",
+        targeting_clicks: "640",
+        targeting_likes: "120",
+        targeting_comments: "35",
+        targeting_additional_info: "Siffrorna är testvärden för lokal verifiering.",
+        ad_channels: "Facebook, Instagram, webbplats",
+        gdpr_controller_name: "Testorganisationen Sverige AB",
+        gdpr_controller_contact: "dataskydd@testorganisationen.se",
+        gdpr_rights_url: "https://example.se/dataskyddsrattigheter",
+        gdpr_info_url: "https://example.se/personuppgifter",
+        consent_withdrawal_url: "https://example.se/aterkalla-samtycke",
+        prior_non_compliance_description:
+          "En tidigare testversion återkallades i utvecklingsmiljön för att verifiera fältet."
+      });
+      setCheckbox(form, "amount_includes_vat", true);
     }, 0);
   }
 
@@ -278,7 +328,7 @@ export function CampaignForm({
             <input name="sponsor_email" type="email" defaultValue={campaign?.sponsor_email || ""} required />
           </label>
           <label>
-            Sponsorns kontaktuppgifter
+            Sponsorns webbplats
             <RequiredMark />
             <input name="sponsor_contact" defaultValue={campaign?.sponsor_contact || ""} required />
           </label>
@@ -315,6 +365,13 @@ export function CampaignForm({
             <input name="controlling_entity" defaultValue={campaign?.controlling_entity || ""} />
           </label>
           <label>
+            Registrerat namn, om annat
+            <input
+              name="controlling_entity_registered_name"
+              defaultValue={campaign?.controlling_entity_registered_name || ""}
+            />
+          </label>
+          <label>
             Kontrollerande enhets e-postadress
             <input
               name="controlling_entity_email"
@@ -327,11 +384,22 @@ export function CampaignForm({
             <input name="controlling_entity_address" defaultValue={campaign?.controlling_entity_address || ""} />
           </label>
           <label>
-            Kontrollerande enhets etableringsort
+            Kontrollerande enhets etableringsort, om annan än postadress
             <input
               name="controlling_entity_establishment"
               defaultValue={campaign?.controlling_entity_establishment || ""}
             />
+          </label>
+          <label>
+            Relevant registreringsnummer
+            <input
+              name="controlling_entity_registration_number"
+              defaultValue={campaign?.controlling_entity_registration_number || ""}
+            />
+          </label>
+          <label>
+            Webbplats
+            <input name="controlling_entity_contact" defaultValue={campaign?.controlling_entity_contact || ""} />
           </label>
         </div>
       ) : null}
@@ -365,8 +433,16 @@ export function CampaignForm({
             <input name="payer_address" defaultValue={campaign?.payer_address || ""} />
           </label>
           <label>
-            Betalarens etableringsort
+            Betalarens etableringsort, om annan än postadress
             <input name="payer_establishment" defaultValue={campaign?.payer_establishment || ""} />
+          </label>
+          <label>
+            Relevant registreringsnummer
+            <input name="payer_registration_number" defaultValue={campaign?.payer_registration_number || ""} />
+          </label>
+          <label>
+            Webbplats
+            <input name="payer_contact" defaultValue={campaign?.payer_contact || ""} />
           </label>
         </div>
       ) : null}
@@ -710,6 +786,19 @@ function fillField(form: HTMLFormElement, name: string, value: string) {
   if (!field) return;
 
   field.value = value;
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  field.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function fillFields(form: HTMLFormElement, values: Record<string, string>) {
+  Object.entries(values).forEach(([name, value]) => fillField(form, name, value));
+}
+
+function setCheckbox(form: HTMLFormElement, name: string, checked: boolean) {
+  const field = form.querySelector<HTMLInputElement>(`input[type="checkbox"][name="${name}"]`);
+  if (!field) return;
+
+  field.checked = checked;
   field.dispatchEvent(new Event("input", { bubbles: true }));
   field.dispatchEvent(new Event("change", { bubbles: true }));
 }
