@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
-import { signOut } from "@/app/(auth)/login/actions";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { HeaderActions } from "@/components/HeaderActions";
 import { createClient, hasSupabaseEnv } from "@/utils/supabase/server";
 import "./globals.css";
 
@@ -24,22 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <span className="mark">T</span>
             <span>OpenTTPA</span>
           </Link>
-          <nav className="actions" aria-label="Huvudmeny">
-            {user ? (
-              <>
-                <Link className="button secondary user-link" href={profileHref} title={user.email || "Profil"}>
-                  {user.email}
-                </Link>
-                <form action={signOut}>
-                  <button type="submit">Logga ut</button>
-                </form>
-              </>
-            ) : (
-              <Link className="button" href="/login">
-                Logga in
-              </Link>
-            )}
-          </nav>
+          <HeaderActions userEmail={user?.email || null} profileHref={profileHref} />
         </header>
         {user ? (
           <nav className="shell subnav" aria-label="Plats">

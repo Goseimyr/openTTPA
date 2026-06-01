@@ -43,16 +43,21 @@ const campaignSchema = z.object({
   sponsor_address: z.string().min(1, "Sponsorns postadress saknas."),
   sponsor_establishment: optionalText,
   sponsor_registration_number: optionalText,
-  sponsor_contact: z.string().min(1, "Sponsorns kontaktuppgifter saknas."),
+  sponsor_contact: z.string().min(1, "Sponsorns webbplats saknas."),
   controlling_entity: z.string().optional(),
+  controlling_entity_registered_name: optionalText,
   controlling_entity_email: optionalText,
   controlling_entity_address: optionalText,
   controlling_entity_establishment: optionalText,
+  controlling_entity_registration_number: optionalText,
+  controlling_entity_contact: optionalText,
   payer_name: optionalText,
   payer_registered_name: optionalText,
   payer_email: optionalText,
   payer_address: optionalText,
   payer_establishment: optionalText,
+  payer_registration_number: optionalText,
+  payer_contact: optionalText,
   publisher_name: z.string().optional(),
   publisher_contact: z.string().optional(),
   period_start: z.string().min(1, "Startdatum saknas."),
@@ -126,7 +131,10 @@ export async function createOrganization(formData: FormData) {
     registered_name: String(formData.get("registered_name") || "").trim(),
     email: String(formData.get("email") || "").trim(),
     address: String(formData.get("address") || "").trim(),
-    establishment: String(formData.get("establishment") || "").trim()
+    establishment:
+      String(formData.get("establishment") || "").trim() ||
+      deriveEstablishmentFromAddress(String(formData.get("address") || "").trim()) ||
+      ""
   };
 
   const result = organizationSchema.safeParse(raw);
@@ -179,7 +187,10 @@ export async function updateOrganization(formData: FormData) {
     registered_name: String(formData.get("registered_name") || "").trim(),
     email: String(formData.get("email") || "").trim(),
     address: String(formData.get("address") || "").trim(),
-    establishment: String(formData.get("establishment") || "").trim()
+    establishment:
+      String(formData.get("establishment") || "").trim() ||
+      deriveEstablishmentFromAddress(String(formData.get("address") || "").trim()) ||
+      ""
   };
 
   const result = organizationSchema.safeParse(raw);
@@ -232,14 +243,19 @@ export async function saveCampaign(formData: FormData) {
     sponsor_registration_number: String(formData.get("sponsor_registration_number") || "").trim(),
     sponsor_contact: String(formData.get("sponsor_contact") || "").trim(),
     controlling_entity: String(formData.get("controlling_entity") || "").trim(),
+    controlling_entity_registered_name: String(formData.get("controlling_entity_registered_name") || "").trim(),
     controlling_entity_email: String(formData.get("controlling_entity_email") || "").trim(),
     controlling_entity_address: String(formData.get("controlling_entity_address") || "").trim(),
     controlling_entity_establishment: String(formData.get("controlling_entity_establishment") || "").trim(),
+    controlling_entity_registration_number: String(formData.get("controlling_entity_registration_number") || "").trim(),
+    controlling_entity_contact: String(formData.get("controlling_entity_contact") || "").trim(),
     payer_name: String(formData.get("payer_name") || "").trim(),
     payer_registered_name: String(formData.get("payer_registered_name") || "").trim(),
     payer_email: String(formData.get("payer_email") || "").trim(),
     payer_address: String(formData.get("payer_address") || "").trim(),
     payer_establishment: String(formData.get("payer_establishment") || "").trim(),
+    payer_registration_number: String(formData.get("payer_registration_number") || "").trim(),
+    payer_contact: String(formData.get("payer_contact") || "").trim(),
     publisher_name: String(formData.get("publisher_name") || "").trim(),
     publisher_contact: String(formData.get("publisher_contact") || "").trim(),
     period_start: String(formData.get("period_start") || ""),
@@ -318,14 +334,18 @@ export async function saveCampaign(formData: FormData) {
         raw.sponsor_registered_name = organization.registered_name || "";
         raw.sponsor_email = organization.email || "";
         raw.sponsor_address = organization.address || "";
-        raw.sponsor_establishment = organization.establishment || "";
+        raw.sponsor_establishment = organization.establishment || deriveEstablishmentFromAddress(organization.address) || "";
       }
 
       if (controllingEntitySameAsOrganization) {
         raw.controlling_entity = organization.name;
+        raw.controlling_entity_registered_name = organization.registered_name || "";
         raw.controlling_entity_email = organization.email || "";
         raw.controlling_entity_address = organization.address || "";
-        raw.controlling_entity_establishment = organization.establishment || "";
+        raw.controlling_entity_establishment =
+          organization.establishment || deriveEstablishmentFromAddress(organization.address) || "";
+        raw.controlling_entity_registration_number = organization.org_number || "";
+        raw.controlling_entity_contact = organizationContact;
       }
 
       if (payerSameAsOrganization) {
@@ -333,7 +353,9 @@ export async function saveCampaign(formData: FormData) {
         raw.payer_registered_name = organization.registered_name || "";
         raw.payer_email = organization.email || "";
         raw.payer_address = organization.address || "";
-        raw.payer_establishment = organization.establishment || "";
+        raw.payer_establishment = organization.establishment || deriveEstablishmentFromAddress(organization.address) || "";
+        raw.payer_registration_number = organization.org_number || "";
+        raw.payer_contact = organizationContact;
       }
 
       if (publisherSameAsOrganization) {
@@ -342,6 +364,10 @@ export async function saveCampaign(formData: FormData) {
       }
     }
   }
+
+  raw.sponsor_establishment ||= deriveEstablishmentFromAddress(raw.sponsor_address) || "";
+  raw.controlling_entity_establishment ||= deriveEstablishmentFromAddress(raw.controlling_entity_address) || "";
+  raw.payer_establishment ||= deriveEstablishmentFromAddress(raw.payer_address) || "";
 
   const backUrl = id
     ? `/dashboard/campaigns/${id}/edit`
@@ -366,14 +392,19 @@ export async function saveCampaign(formData: FormData) {
     sponsor_registration_number,
     sponsor_contact,
     controlling_entity,
+    controlling_entity_registered_name,
     controlling_entity_email,
     controlling_entity_address,
     controlling_entity_establishment,
+    controlling_entity_registration_number,
+    controlling_entity_contact,
     payer_name,
     payer_registered_name,
     payer_email,
     payer_address,
     payer_establishment,
+    payer_registration_number,
+    payer_contact,
     publisher_name,
     publisher_contact,
     period_start,
@@ -439,14 +470,19 @@ export async function saveCampaign(formData: FormData) {
     sponsor_registration_number: sponsor_registration_number || null,
     sponsor_contact,
     controlling_entity: controlling_entity || null,
+    controlling_entity_registered_name: controlling_entity_registered_name || null,
     controlling_entity_email: controlling_entity_email || null,
     controlling_entity_address: controlling_entity_address || null,
     controlling_entity_establishment: controlling_entity_establishment || null,
+    controlling_entity_registration_number: controlling_entity_registration_number || null,
+    controlling_entity_contact: controlling_entity_contact || null,
     payer_name: payer_name || null,
     payer_registered_name: payer_registered_name || null,
     payer_email: payer_email || null,
     payer_address: payer_address || null,
     payer_establishment: payer_establishment || null,
+    payer_registration_number: payer_registration_number || null,
+    payer_contact: payer_contact || null,
     publisher_name: publisher_name || null,
     publisher_contact: publisher_contact || null,
     period_start,
@@ -541,4 +577,18 @@ function parseInteger(value: string | undefined): number | null {
   if (!value) return null;
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function deriveEstablishmentFromAddress(address: string | null | undefined) {
+  if (!address) return null;
+
+  const lastAddressPart = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .at(-1);
+  if (!lastAddressPart) return null;
+
+  const withoutPostalCode = lastAddressPart.replace(/^\d{3}\s?\d{2}\s+/, "").trim();
+  return withoutPostalCode || lastAddressPart;
 }

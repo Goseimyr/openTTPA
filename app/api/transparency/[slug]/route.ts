@@ -48,16 +48,21 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       },
       controlling_entity: {
         name: campaign.controlling_entity,
+        registered_name: campaign.controlling_entity_registered_name,
         email: campaign.controlling_entity_email,
         address: campaign.controlling_entity_address,
-        establishment: campaign.controlling_entity_establishment
+        establishment: campaign.controlling_entity_establishment,
+        registration_number: campaign.controlling_entity_registration_number,
+        contact: campaign.controlling_entity_contact
       },
       payer: {
         name: campaign.payer_name,
         registered_name: campaign.payer_registered_name,
         email: campaign.payer_email,
         address: campaign.payer_address,
-        establishment: campaign.payer_establishment
+        establishment: campaign.payer_establishment,
+        registration_number: campaign.payer_registration_number,
+        contact: campaign.payer_contact
       },
       publisher: {
         name: campaign.publisher_name,
