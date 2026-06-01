@@ -10,7 +10,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     .from("campaigns")
     .select("*, organizations(*)")
     .eq("slug", slug)
-    .in("status", ["active", "archived"])
     .single();
 
   if (!data) {
@@ -18,6 +17,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   }
 
   const campaign = data as Campaign;
+  if (campaign.status === "draft") {
+    const canPreview = await canPreviewCampaign(supabase, campaign);
+    if (!canPreview) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+  }
 
   return NextResponse.json({
     schema: "openttpa.transparency_notice.v1",
@@ -123,4 +128,21 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       channels: campaign.ad_channels || []
     }
   });
+}
+
+async function canPreviewCampaign(supabase: Awaited<ReturnType<typeof createClient>>, campaign: Campaign) {
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) return false;
+
+  const { data } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .eq("organization_id", campaign.organization_id)
+    .maybeSingle();
+
+  return Boolean(data);
 }

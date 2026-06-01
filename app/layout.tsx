@@ -12,7 +12,9 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await getUser();
+  const session = await getSessionHeader();
+  const user = session?.user || null;
+  const profileHref = session?.profileHref || "/dashboard";
 
   return (
     <html lang="sv">
@@ -25,7 +27,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <nav className="actions" aria-label="Huvudmeny">
             {user ? (
               <>
-                <Link className="button secondary user-link" href="/profile" title={user.email || "Profil"}>
+                <Link className="button secondary user-link" href={profileHref} title={user.email || "Profil"}>
                   {user.email}
                 </Link>
                 <form action={signOut}>
@@ -57,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   );
 }
 
-async function getUser() {
+async function getSessionHeader() {
   if (!hasSupabaseEnv()) return null;
 
   try {
@@ -65,7 +67,23 @@ async function getUser() {
     const {
       data: { user }
     } = await supabase.auth.getUser();
-    return user;
+
+    if (!user) return null;
+
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    return {
+      user,
+      profileHref: membership?.organization_id
+        ? `/dashboard/organizations/${membership.organization_id}/users/${user.id}`
+        : "/dashboard"
+    };
   } catch {
     return null;
   }

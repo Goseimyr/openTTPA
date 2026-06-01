@@ -4,7 +4,6 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { slugify } from "@/lib/format";
 import { createClient } from "@/utils/supabase/server";
 
 async function requireUser() {
@@ -133,7 +132,7 @@ export async function createOrganization(formData: FormData) {
   const result = organizationSchema.safeParse(raw);
   if (!result.success) {
     const message = result.error.issues[0]?.message || "Ogiltiga uppgifter.";
-    redirect(`/dashboard?message=${encodeURIComponent(message)}`);
+    redirect(`/dashboard?new=organization&message=${encodeURIComponent(message)}`);
   }
 
   const { name, org_number, website, legal_form, registered_name, email, address, establishment } = result.data;
@@ -154,7 +153,9 @@ export async function createOrganization(formData: FormData) {
       userId: user.id,
       error
     });
-    redirect(`/dashboard?message=${encodeURIComponent(error?.message || "Organisationen kunde inte skapas.")}`);
+    redirect(
+      `/dashboard?new=organization&message=${encodeURIComponent(error?.message || "Organisationen kunde inte skapas.")}`
+    );
   }
 
   console.info("Organization created", {
@@ -342,11 +343,13 @@ export async function saveCampaign(formData: FormData) {
     }
   }
 
-  const backUrl = id ? `/dashboard/campaigns/${id}` : "/dashboard/campaigns/new";
+  const backUrl = id
+    ? `/dashboard/campaigns/${id}/edit`
+    : `/dashboard/campaigns/new?organization=${encodeURIComponent(raw.organization_id)}`;
   const result = campaignSchema.safeParse(raw);
   if (!result.success) {
     const message = result.error.issues[0]?.message || "Ogiltiga uppgifter.";
-    redirect(`${backUrl}?message=${encodeURIComponent(message)}`);
+    redirect(`${backUrl}${backUrl.includes("?") ? "&" : "?"}message=${encodeURIComponent(message)}`);
   }
 
   const {
@@ -499,8 +502,7 @@ export async function saveCampaign(formData: FormData) {
   };
 
   if (!id) {
-    const slugBase = slugify(name || "kampanj");
-    const slug = `${slugBase}-${randomUUID().slice(0, 8)}`;
+    const slug = randomUUID().replaceAll("-", "").slice(0, 12);
     const { error } = await supabase.from("campaigns").insert({ ...payload, slug });
     if (error) {
       console.error("Failed to create campaign", { organizationId: organization_id, error });
@@ -514,12 +516,19 @@ export async function saveCampaign(formData: FormData) {
     const { error } = await supabase.from("campaigns").update(payload).eq("id", id);
     if (error) {
       console.error("Failed to update campaign", { campaignId: id, organizationId: organization_id, error });
-      redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Kampanjen kunde inte sparas.")}`);
+      redirect(`/dashboard/campaigns/${id}/edit?message=${encodeURIComponent("Kampanjen kunde inte sparas.")}`);
     }
   }
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  revalidatePath(`/dashboard/organizations/${organization_id}`);
+
+  if (id) {
+    revalidatePath(`/dashboard/campaigns/${id}`);
+    redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Kampanjen har sparats.")}`);
+  }
+
+  redirect(`/dashboard/organizations/${organization_id}`);
 }
 
 function parseAmount(value: string | undefined): number | null {

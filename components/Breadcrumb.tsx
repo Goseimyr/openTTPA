@@ -10,11 +10,18 @@ type OrganizationCrumb = {
   name: string;
 };
 
+type CampaignCrumb = {
+  id: string;
+  name: string;
+  organization_id: string;
+};
+
 export function Breadcrumb() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [organization, setOrganization] = useState<OrganizationCrumb | null>(null);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
+  const [campaign, setCampaign] = useState<CampaignCrumb | null>(null);
 
   const showOrganizations =
     pathname === "/" ||
@@ -23,10 +30,16 @@ export function Breadcrumb() {
     pathname.startsWith("/dashboard/campaigns");
 
   const routeOrganizationId = pathname.match(/^\/dashboard\/organizations\/([^/]+)/)?.[1] || null;
-  const campaignOrganizationId = pathname.startsWith("/dashboard/campaigns")
-    ? searchParams.get("organization") || selectedOrganizationId
+  const routeCampaignIdMatch = pathname.match(/^\/dashboard\/campaigns\/([^/]+)/)?.[1] || null;
+  const routeCampaignId = routeCampaignIdMatch === "new" ? null : routeCampaignIdMatch;
+  const selectedCampaignOrganizationId = pathname.startsWith("/dashboard/campaigns")
+    ? searchParams.get("organization") || selectedOrganizationId || campaign?.organization_id || null
     : null;
-  const organizationId = routeOrganizationId || campaignOrganizationId;
+  const organizationId = routeOrganizationId || selectedCampaignOrganizationId;
+  const isNewCampaignPage = pathname === "/dashboard/campaigns/new";
+  const isEditCampaignPage = Boolean(pathname.match(/^\/dashboard\/campaigns\/[^/]+\/edit$/));
+  const isEditOrganizationPage = Boolean(pathname.match(/^\/dashboard\/organizations\/[^/]+\/edit$/));
+  const isOrganizationUserPage = Boolean(pathname.match(/^\/dashboard\/organizations\/[^/]+\/users\/[^/]+$/));
 
   useEffect(() => {
     function handleOrganizationChange(event: Event) {
@@ -41,6 +54,37 @@ export function Breadcrumb() {
   useEffect(() => {
     if (!pathname.startsWith("/dashboard/campaigns")) setSelectedOrganizationId(null);
   }, [pathname]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    if (!routeCampaignId) {
+      setCampaign(null);
+      return;
+    }
+
+    async function loadCampaign() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("campaigns")
+          .select("id, name, organization_id")
+          .eq("id", decodeURIComponent(routeCampaignId || ""))
+          .maybeSingle();
+
+        if (!ignore) setCampaign(data || null);
+      } catch {
+        if (!ignore) setCampaign(null);
+      }
+    }
+
+    setCampaign(null);
+    loadCampaign();
+
+    return () => {
+      ignore = true;
+    };
+  }, [routeCampaignId]);
 
   useEffect(() => {
     let ignore = false;
@@ -84,6 +128,40 @@ export function Breadcrumb() {
         <>
           <span aria-hidden>&gt;</span>
           <Link href={`/dashboard/organizations/${organization.id}`}>{organization.name}</Link>
+        </>
+      ) : null}
+      {isEditOrganizationPage ? (
+        <>
+          <span aria-hidden>&gt;</span>
+          <span>Redigera organisation</span>
+        </>
+      ) : null}
+      {isOrganizationUserPage ? (
+        <>
+          <span aria-hidden>&gt;</span>
+          <span>Användare</span>
+        </>
+      ) : null}
+      {isNewCampaignPage ? (
+        <>
+          <span aria-hidden>&gt;</span>
+          <span>Ny kampanj</span>
+        </>
+      ) : null}
+      {campaign ? (
+        <>
+          <span aria-hidden>&gt;</span>
+          {isEditCampaignPage ? (
+            <Link href={`/dashboard/campaigns/${campaign.id}`}>{campaign.name}</Link>
+          ) : (
+            <span>{campaign.name}</span>
+          )}
+        </>
+      ) : null}
+      {isEditCampaignPage ? (
+        <>
+          <span aria-hidden>&gt;</span>
+          <span>Redigera kampanj</span>
         </>
       ) : null}
     </>
