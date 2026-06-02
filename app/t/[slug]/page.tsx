@@ -12,7 +12,9 @@ export default async function TransparencyPage({ params }: { params: Promise<{ s
   const supabase = await createClient();
   const { data } = await supabase
     .from("campaigns")
-    .select("*, organizations(*)")
+    .select(
+      "*, organizations(*), replaces_campaign:campaigns!campaigns_replaces_campaign_id_fkey(id,name,slug,version), replaced_by_campaign:campaigns!campaigns_replaced_by_campaign_id_fkey(id,name,slug,version)"
+    )
     .eq("slug", slug)
     .single();
 

@@ -5,6 +5,12 @@ export type Campaign = {
   organization_id: string;
   slug: string;
   status: CampaignStatus;
+  published_at: string | null;
+  archived_at: string | null;
+  replaces_campaign_id: string | null;
+  replaced_by_campaign_id: string | null;
+  version: number;
+  publication_group_id: string;
   language: string;
   name: string;
   sponsor_type: string | null;
@@ -81,6 +87,8 @@ export type Campaign = {
   created_at: string;
   updated_at: string;
   organizations?: Organization | null;
+  replaces_campaign?: Pick<Campaign, "id" | "name" | "slug" | "version"> | null;
+  replaced_by_campaign?: Pick<Campaign, "id" | "name" | "slug" | "version"> | null;
 };
 
 export type Organization = {

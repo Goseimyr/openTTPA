@@ -8,7 +8,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const supabase = await createClient();
   const { data } = await supabase
     .from("campaigns")
-    .select("*, organizations(*)")
+    .select(
+      "*, organizations(*), replaces_campaign:campaigns!campaigns_replaces_campaign_id_fkey(id,name,slug,version), replaced_by_campaign:campaigns!campaigns_replaced_by_campaign_id_fkey(id,name,slug,version)"
+    )
     .eq("slug", slug)
     .single();
 
@@ -32,6 +34,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       id: campaign.id,
       name: campaign.name,
       status: campaign.status,
+      version: campaign.version,
+      published_at: campaign.published_at,
+      archived_at: campaign.archived_at,
+      replaces_url: campaign.replaces_campaign ? publicCampaignUrl(campaign.replaces_campaign.slug) : null,
+      replaced_by_url: campaign.replaced_by_campaign ? publicCampaignUrl(campaign.replaced_by_campaign.slug) : null,
       language: campaign.language,
       updated_at: campaign.updated_at
     },

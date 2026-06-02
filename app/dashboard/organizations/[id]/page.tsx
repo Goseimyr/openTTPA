@@ -199,7 +199,7 @@ export default async function OrganizationPage({
 }
 
 function statusLabel(status: string) {
-  if (status === "active") return "Aktuell";
+  if (status === "active") return "Publicerad";
   if (status === "archived") return "Arkiverad";
   return "Utkast";
 }

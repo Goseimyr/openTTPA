@@ -32,6 +32,13 @@ export default async function EditCampaignPage({
 
   const { data: campaign } = await supabase.from("campaigns").select("*").eq("id", id).single();
   if (!campaign) notFound();
+  if ((campaign as Campaign).status !== "draft") {
+    redirect(
+      `/dashboard/campaigns/${id}?message=${encodeURIComponent(
+        "Publicerade och arkiverade meddelanden kan inte ändras. Skapa en ny version i stället."
+      )}`
+    );
+  }
 
   return (
     <main className="shell" style={{ paddingBottom: 64 }}>

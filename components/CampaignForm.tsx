@@ -133,7 +133,6 @@ export function CampaignForm({
       fillFields(form, {
         name: "Testkampanj för transparensmeddelande",
         language: "Svenska",
-        status: "draft",
         complaint_contact: preferredContact,
         sponsor_type: "juridisk_person",
         sponsor_name: "Testorganisationen",
@@ -258,15 +257,6 @@ export function CampaignForm({
                 {organization.name}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          Status
-          <RequiredMark />
-          <select name="status" defaultValue={campaign?.status || "draft"}>
-            <option value="draft">Utkast</option>
-            <option value="active">Aktuell</option>
-            <option value="archived">Arkiverad</option>
           </select>
         </label>
         <label>
