@@ -99,6 +99,9 @@ export default async function OrganizationPage({
           <Link className="button secondary" href={`/dashboard/organizations/${organization.id}/edit`}>
             Redigera organisation
           </Link>
+          <Link className="button secondary" href={`/dashboard/organizations/${organization.id}/events`}>
+            Visa eventlogg
+          </Link>
         </div>
       </section>
 

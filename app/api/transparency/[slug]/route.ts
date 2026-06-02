@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { campaignForPublishedView } from "@/lib/campaignSnapshot";
 import { publicCampaignUrl } from "@/lib/format";
 import { createClient } from "@/utils/supabase/server";
 import type { Campaign } from "@/lib/types";
@@ -18,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const campaign = data as Campaign;
+  const campaign = campaignForPublishedView(data as Campaign);
   if (campaign.status === "draft") {
     const canPreview = await canPreviewCampaign(supabase, campaign);
     if (!canPreview) {

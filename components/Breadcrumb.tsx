@@ -38,7 +38,9 @@ export function Breadcrumb() {
   const organizationId = routeOrganizationId || selectedCampaignOrganizationId;
   const isNewCampaignPage = pathname === "/dashboard/campaigns/new";
   const isEditCampaignPage = Boolean(pathname.match(/^\/dashboard\/campaigns\/[^/]+\/edit$/));
+  const isCampaignEventsPage = Boolean(pathname.match(/^\/dashboard\/campaigns\/[^/]+\/events$/));
   const isEditOrganizationPage = Boolean(pathname.match(/^\/dashboard\/organizations\/[^/]+\/edit$/));
+  const isOrganizationEventsPage = Boolean(pathname.match(/^\/dashboard\/organizations\/[^/]+\/events$/));
   const isOrganizationUserPage = Boolean(pathname.match(/^\/dashboard\/organizations\/[^/]+\/users\/[^/]+$/));
 
   useEffect(() => {
@@ -136,6 +138,12 @@ export function Breadcrumb() {
           <span>Redigera organisation</span>
         </>
       ) : null}
+      {isOrganizationEventsPage ? (
+        <>
+          <span aria-hidden>&gt;</span>
+          <span>Eventlogg</span>
+        </>
+      ) : null}
       {isOrganizationUserPage ? (
         <>
           <span aria-hidden>&gt;</span>
@@ -162,6 +170,12 @@ export function Breadcrumb() {
         <>
           <span aria-hidden>&gt;</span>
           <span>Redigera kampanj</span>
+        </>
+      ) : null}
+      {isCampaignEventsPage ? (
+        <>
+          <span aria-hidden>&gt;</span>
+          <span>Eventlogg</span>
         </>
       ) : null}
     </>

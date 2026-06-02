@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { TransparencyNotice } from "@/components/TransparencyNotice";
+import { campaignForPublishedView } from "@/lib/campaignSnapshot";
 import { publicCampaignJsonUrl, publicCampaignUrl } from "@/lib/format";
 import { createClient } from "@/utils/supabase/server";
 import type { Campaign } from "@/lib/types";
@@ -20,7 +21,7 @@ export default async function TransparencyPage({ params }: { params: Promise<{ s
 
   if (!data) notFound();
 
-  const campaign = data as Campaign;
+  const campaign = campaignForPublishedView(data as Campaign);
   if (campaign.status === "draft") {
     const canPreview = await canPreviewCampaign(supabase, campaign);
     if (!canPreview) notFound();

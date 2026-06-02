@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { archiveCampaign, createCampaignVersion, publishCampaign } from "@/app/dashboard/actions";
 import { AutoDismissNotice } from "@/components/AutoDismissNotice";
 import { TransparencyNotice } from "@/components/TransparencyNotice";
+import { campaignForPublishedView } from "@/lib/campaignSnapshot";
 import { formatDate, normalizeOrganization, publicCampaignJsonUrl, publicCampaignUrl } from "@/lib/format";
 import { createClient } from "@/utils/supabase/server";
 import type { Campaign, Organization } from "@/lib/types";
@@ -42,6 +43,7 @@ export default async function CampaignPage({
 
   if (!membership) notFound();
 
+  const noticeCampaign = campaignForPublishedView(campaign as Campaign);
   const publicUrl = publicCampaignUrl((campaign as Campaign).slug);
   const jsonUrl = publicCampaignJsonUrl((campaign as Campaign).slug);
   const qrUrl = `/api/qr/${(campaign as Campaign).slug}`;
@@ -134,13 +136,16 @@ export default async function CampaignPage({
               </button>
             </form>
           ) : null}
+          <Link className="button secondary" href={`/dashboard/campaigns/${(campaign as Campaign).id}/events`}>
+            Visa eventlogg
+          </Link>
         </div>
       </section>
 
       <section className="organization-campaigns" style={{ margin: "36px 0 20px" }}>
         <h2>Transparensmeddelande</h2>
         <p className="muted">Så här visas informationen på den publika sidan.</p>
-        <TransparencyNotice campaign={campaign as Campaign} />
+        <TransparencyNotice campaign={noticeCampaign} />
         <section className="machine-readable" style={{ marginTop: 28 }}>
           <h2>Maskinläsbar version</h2>
           <p className="muted">

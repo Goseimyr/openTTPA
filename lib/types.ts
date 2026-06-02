@@ -6,6 +6,7 @@ export type Campaign = {
   slug: string;
   status: CampaignStatus;
   published_at: string | null;
+  published_snapshot: Record<string, unknown> | null;
   archived_at: string | null;
   replaces_campaign_id: string | null;
   replaced_by_campaign_id: string | null;
