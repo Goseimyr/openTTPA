@@ -37,7 +37,11 @@ export default function PrivacyPage() {
           />
           <Info
             label="Kontakt"
-            value="Lägg till ansvarig organisations kontaktuppgifter här innan tjänsten används i produktion."
+            value={
+              <>
+                Kontakta OpenTTPA på <a href="mailto:gustaf@seimyr.se">gustaf@seimyr.se</a>.
+              </>
+            }
           />
         </dl>
 
@@ -56,7 +60,7 @@ export default function PrivacyPage() {
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="definition">
       <dt>{label}</dt>

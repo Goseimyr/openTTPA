@@ -45,6 +45,14 @@ export default function OpenSourcePage() {
             label="Ansvar"
             value="Bidrag bör vara testade, tydligt beskrivna och inte innehålla hemligheter, personuppgifter eller upphovsrättsskyddat material som inte får delas."
           />
+          <Info
+            label="Kontakt"
+            value={
+              <>
+                Kontakta OpenTTPA på <a href="mailto:gustaf@seimyr.se">gustaf@seimyr.se</a>.
+              </>
+            }
+          />
         </dl>
       </section>
     </main>

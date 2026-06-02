@@ -13,10 +13,26 @@ export default async function SignupPage({
       <section className="grid two" style={{ alignItems: "start", paddingTop: 48 }}>
         <div className="stack">
           <h1>Kom igång</h1>
-          <p className="lead">
-            Skapa ett konto för att registrera organisationer, lägga upp kampanjer och publicera
-            TTPA-transparensmeddelanden.
-          </p>
+          <div className="stack signup-info">
+            <p className="lead">
+              Skapa ett konto för att registrera organisationer, lägga upp kampanjer och publicera
+              TTPA-transparensmeddelanden.
+            </p>
+            <p className="lead">
+              Den som publicerar ansvarar själv för att uppgifterna är korrekta, fullständiga och
+              uppfyller tillämpliga rättsliga krav. OpenTTPA tar inte juridiskt ansvar för publicerad
+              information.
+            </p>
+            <p className="lead">
+              OpenTTPA behandlar personuppgifter för att kunna skapa användarkonton och tillhandahålla
+              transparensmeddelanden för politisk reklam. Uppgifter sparas så länge kontot eller
+              kampanjen behövs.
+            </p>
+            <p className="lead">
+              Publicerade transparensuppgifter och ändringshistorik lagras permanent i minst sju (7)
+              år för spårbarhet och uppfyllande av krav enligt gällande förordning (EU) 2024/900.
+            </p>
+          </div>
           {params.message ? <p className="notice">{params.message}</p> : null}
         </div>
 
