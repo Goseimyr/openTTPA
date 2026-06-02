@@ -577,13 +577,13 @@ export async function saveCampaign(formData: FormData) {
 }
 
 export async function publishCampaign(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const id = String(formData.get("id") || "");
   if (!id) redirect("/dashboard?message=Meddelande saknas.");
 
   const { data: campaign } = await supabase
     .from("campaigns")
-    .select("id, organization_id, status, replaces_campaign_id")
+    .select("*")
     .eq("id", id)
     .single();
 
@@ -593,9 +593,15 @@ export async function publishCampaign(formData: FormData) {
   }
 
   const publishedAt = new Date().toISOString();
+  const publishedSnapshot = {
+    ...campaign,
+    status: "active",
+    published_at: publishedAt,
+    published_snapshot: null
+  };
   const { error } = await supabase
     .from("campaigns")
-    .update({ status: "active", published_at: publishedAt })
+    .update({ status: "active", published_at: publishedAt, published_snapshot: publishedSnapshot })
     .eq("id", id)
     .eq("status", "draft");
 
@@ -609,7 +615,20 @@ export async function publishCampaign(formData: FormData) {
       .from("campaigns")
       .update({ replaced_by_campaign_id: id })
       .eq("id", campaign.replaces_campaign_id);
+    await logCampaignPublicationEvent(supabase, {
+      campaignId: campaign.replaces_campaign_id,
+      eventType: "superseded",
+      userId: user.id,
+      metadata: { replaced_by_campaign_id: id }
+    });
   }
+
+  await logCampaignPublicationEvent(supabase, {
+    campaignId: id,
+    eventType: "published",
+    userId: user.id,
+    metadata: { replaces_campaign_id: campaign.replaces_campaign_id }
+  });
 
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/organizations/${campaign.organization_id}`);
@@ -618,7 +637,7 @@ export async function publishCampaign(formData: FormData) {
 }
 
 export async function archiveCampaign(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const id = String(formData.get("id") || "");
   if (!id) redirect("/dashboard?message=Meddelande saknas.");
 
@@ -645,6 +664,13 @@ export async function archiveCampaign(formData: FormData) {
     redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Meddelandet kunde inte arkiveras.")}`);
   }
 
+  await logCampaignPublicationEvent(supabase, {
+    campaignId: id,
+    eventType: "archived",
+    userId: user.id,
+    metadata: { archived_at: archivedAt }
+  });
+
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/organizations/${campaign.organization_id}`);
   revalidatePath(`/dashboard/campaigns/${id}`);
@@ -652,7 +678,7 @@ export async function archiveCampaign(formData: FormData) {
 }
 
 export async function createCampaignVersion(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const id = String(formData.get("id") || "");
   if (!id) redirect("/dashboard?message=Meddelande saknas.");
 
@@ -671,6 +697,7 @@ export async function createCampaignVersion(formData: FormData) {
     slug: _slug,
     status: _status,
     published_at: _publishedAt,
+    published_snapshot: _publishedSnapshot,
     archived_at: _archivedAt,
     replaced_by_campaign_id: _replacedByCampaignId,
     created_at: _createdAt,
@@ -685,6 +712,7 @@ export async function createCampaignVersion(formData: FormData) {
       slug,
       status: "draft",
       published_at: null,
+      published_snapshot: null,
       archived_at: null,
       replaces_campaign_id: source.id,
       replaced_by_campaign_id: null,
@@ -699,9 +727,42 @@ export async function createCampaignVersion(formData: FormData) {
     redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Ny version kunde inte skapas.")}`);
   }
 
+  await logCampaignPublicationEvent(supabase, {
+    campaignId: source.id,
+    eventType: "version_created",
+    userId: user.id,
+    metadata: { draft_campaign_id: draft.id, version: (source.version || 1) + 1 }
+  });
+
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/organizations/${source.organization_id}`);
   redirect(`/dashboard/campaigns/${draft.id}/edit?message=${encodeURIComponent("Ny version har skapats som utkast.")}`);
+}
+
+async function logCampaignPublicationEvent(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  {
+    campaignId,
+    eventType,
+    userId,
+    metadata
+  }: {
+    campaignId: string;
+    eventType: "published" | "archived" | "version_created" | "superseded";
+    userId: string;
+    metadata?: Record<string, unknown>;
+  }
+) {
+  const { error } = await supabase.from("campaign_publication_events").insert({
+    campaign_id: campaignId,
+    event_type: eventType,
+    created_by: userId,
+    metadata: metadata || {}
+  });
+
+  if (error) {
+    console.error("Failed to log campaign publication event", { campaignId, eventType, error });
+  }
 }
 
 function parseAmount(value: string | undefined): number | null {
