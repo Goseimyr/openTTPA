@@ -8,7 +8,7 @@ export function TransparencyNotice({ campaign }: { campaign: Campaign }) {
       <h2>TRANSPARENSMEDDELANDE</h2>
       <p>
         Detta är ett transparensmeddelande för politisk reklam. Det är utformat i enlighet med
-        Europaparlamentets och rådets förordning (EU) 2024/900. Syftet är att göra politiska
+        gällande förordning (EU) 2024/900. Syftet är att göra politiska
         reklammeddelanden lättare att identifiera och förstå.
       </p>
 

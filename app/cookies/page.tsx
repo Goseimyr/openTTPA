@@ -21,7 +21,7 @@ export default function CookiesPage() {
           />
           <Info
             label="Analys och marknadsföring"
-            value="OpenTTPA använder inte kakor för annonsering eller marknadsföring. Visningsstatistik för transparensmeddelanden sparas server-side och kräver inte att en analyskaka sätts i besökarens webbläsare."
+            value="OpenTTPA använder inte kakor för annonsering eller marknadsföring. Tjänsten använder Vercel Web Analytics för grundläggande webbplatsstatistik. Enligt Vercel använder Web Analytics inte kakor. Visningsstatistik för transparensmeddelanden sparas server-side och kräver inte att en analyskaka sätts i besökarens webbläsare."
           />
           <Info
             label="Tredje parter"
@@ -33,7 +33,11 @@ export default function CookiesPage() {
           />
           <Info
             label="Kontakt"
-            value="Lägg till ansvarig organisations kontaktuppgifter här innan tjänsten används i produktion."
+            value={
+              <>
+                Kontakta OpenTTPA på <a href="mailto:gustaf@seimyr.se">gustaf@seimyr.se</a>.
+              </>
+            }
           />
         </dl>
 
@@ -52,7 +56,7 @@ export default function CookiesPage() {
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="definition">
       <dt>{label}</dt>

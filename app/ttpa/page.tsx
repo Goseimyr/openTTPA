@@ -6,8 +6,9 @@ export default function TtpaPage() {
       <section className="stack">
         <h1>TTPA - EU:s förordning om politisk reklam</h1>
         <p className="lead">
-          TTPA är EU:s förordning om transparens och inriktning när det gäller politisk reklam.
-          Syftet är att göra politiska reklammeddelanden lättare att identifiera och förstå.
+          TTPA är Europaparlamentets och rådets förordning om transparens och inriktning när det
+          gäller politisk reklam (EU) 2024/900. Syftet är att göra politiska reklammeddelanden
+          lättare att identifiera och förstå.
         </p>
 
         <dl>
