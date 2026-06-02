@@ -34,7 +34,7 @@ const optionalText = z.string().optional();
 const campaignSchema = z.object({
   name: z.string().min(1, "Kampanjnamn saknas."),
   organization_id: z.string().uuid("Ogiltig organisation."),
-  status: z.enum(["draft", "active", "archived"]),
+  status: z.enum(["draft"]),
   language: z.string().min(1, "Språk saknas."),
   sponsor_type: z.string().min(1, "Sponsorns typ saknas."),
   sponsor_registered_name: optionalText,
@@ -232,7 +232,7 @@ export async function saveCampaign(formData: FormData) {
   const raw = {
     name: String(formData.get("name") || "").trim(),
     organization_id: String(formData.get("organization_id") || ""),
-    status: String(formData.get("status") || "draft"),
+    status: "draft",
     language: String(formData.get("language") || "Svenska"),
     sponsor_type: String(formData.get("sponsor_type") || "").trim(),
     sponsor_registered_name: String(formData.get("sponsor_registered_name") || "").trim(),
@@ -539,7 +539,7 @@ export async function saveCampaign(formData: FormData) {
 
   if (!id) {
     const slug = randomUUID().replaceAll("-", "").slice(0, 12);
-    const { error } = await supabase.from("campaigns").insert({ ...payload, slug });
+    const { error } = await supabase.from("campaigns").insert({ ...payload, slug, publication_group_id: randomUUID() });
     if (error) {
       console.error("Failed to create campaign", { organizationId: organization_id, error });
       redirect(
@@ -549,6 +549,15 @@ export async function saveCampaign(formData: FormData) {
       );
     }
   } else {
+    const { data: existingCampaign } = await supabase.from("campaigns").select("status").eq("id", id).single();
+    if (existingCampaign?.status !== "draft") {
+      redirect(
+        `/dashboard/campaigns/${id}?message=${encodeURIComponent(
+          "Publicerade och arkiverade meddelanden kan inte ändras. Skapa en ny version i stället."
+        )}`
+      );
+    }
+
     const { error } = await supabase.from("campaigns").update(payload).eq("id", id);
     if (error) {
       console.error("Failed to update campaign", { campaignId: id, organizationId: organization_id, error });
@@ -565,6 +574,134 @@ export async function saveCampaign(formData: FormData) {
   }
 
   redirect(`/dashboard/organizations/${organization_id}`);
+}
+
+export async function publishCampaign(formData: FormData) {
+  const { supabase } = await requireUser();
+  const id = String(formData.get("id") || "");
+  if (!id) redirect("/dashboard?message=Meddelande saknas.");
+
+  const { data: campaign } = await supabase
+    .from("campaigns")
+    .select("id, organization_id, status, replaces_campaign_id")
+    .eq("id", id)
+    .single();
+
+  if (!campaign) redirect("/dashboard?message=Meddelandet kunde inte hittas.");
+  if (campaign.status !== "draft") {
+    redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Endast utkast kan publiceras.")}`);
+  }
+
+  const publishedAt = new Date().toISOString();
+  const { error } = await supabase
+    .from("campaigns")
+    .update({ status: "active", published_at: publishedAt })
+    .eq("id", id)
+    .eq("status", "draft");
+
+  if (error) {
+    console.error("Failed to publish campaign", { campaignId: id, error });
+    redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Meddelandet kunde inte publiceras.")}`);
+  }
+
+  if (campaign.replaces_campaign_id) {
+    await supabase
+      .from("campaigns")
+      .update({ replaced_by_campaign_id: id })
+      .eq("id", campaign.replaces_campaign_id);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/organizations/${campaign.organization_id}`);
+  revalidatePath(`/dashboard/campaigns/${id}`);
+  redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Meddelandet har publicerats.")}`);
+}
+
+export async function archiveCampaign(formData: FormData) {
+  const { supabase } = await requireUser();
+  const id = String(formData.get("id") || "");
+  if (!id) redirect("/dashboard?message=Meddelande saknas.");
+
+  const { data: campaign } = await supabase
+    .from("campaigns")
+    .select("id, organization_id, status")
+    .eq("id", id)
+    .single();
+
+  if (!campaign) redirect("/dashboard?message=Meddelandet kunde inte hittas.");
+  if (campaign.status !== "active") {
+    redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Endast publicerade meddelanden kan arkiveras.")}`);
+  }
+
+  const archivedAt = new Date().toISOString();
+  const { error } = await supabase
+    .from("campaigns")
+    .update({ status: "archived", archived_at: archivedAt })
+    .eq("id", id)
+    .eq("status", "active");
+
+  if (error) {
+    console.error("Failed to archive campaign", { campaignId: id, error });
+    redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Meddelandet kunde inte arkiveras.")}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/organizations/${campaign.organization_id}`);
+  revalidatePath(`/dashboard/campaigns/${id}`);
+  redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Meddelandet har arkiverats.")}`);
+}
+
+export async function createCampaignVersion(formData: FormData) {
+  const { supabase } = await requireUser();
+  const id = String(formData.get("id") || "");
+  if (!id) redirect("/dashboard?message=Meddelande saknas.");
+
+  const { data: source, error: sourceError } = await supabase.from("campaigns").select("*").eq("id", id).single();
+  if (sourceError || !source) {
+    console.error("Failed to load source campaign", { campaignId: id, error: sourceError });
+    redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Meddelandet kunde inte kopieras.")}`);
+  }
+
+  if (source.status === "draft") {
+    redirect(`/dashboard/campaigns/${id}/edit?message=${encodeURIComponent("Utkast kan redigeras direkt.")}`);
+  }
+
+  const {
+    id: _id,
+    slug: _slug,
+    status: _status,
+    published_at: _publishedAt,
+    archived_at: _archivedAt,
+    replaced_by_campaign_id: _replacedByCampaignId,
+    created_at: _createdAt,
+    updated_at: _updatedAt,
+    ...copy
+  } = source;
+  const slug = randomUUID().replaceAll("-", "").slice(0, 12);
+  const { data: draft, error } = await supabase
+    .from("campaigns")
+    .insert({
+      ...copy,
+      slug,
+      status: "draft",
+      published_at: null,
+      archived_at: null,
+      replaces_campaign_id: source.id,
+      replaced_by_campaign_id: null,
+      version: (source.version || 1) + 1,
+      publication_group_id: source.publication_group_id || source.id
+    })
+    .select("id")
+    .single();
+
+  if (error || !draft) {
+    console.error("Failed to create campaign version", { campaignId: id, error });
+    redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Ny version kunde inte skapas.")}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/organizations/${source.organization_id}`);
+  redirect(`/dashboard/campaigns/${draft.id}/edit?message=${encodeURIComponent("Ny version har skapats som utkast.")}`);
 }
 
 function parseAmount(value: string | undefined): number | null {

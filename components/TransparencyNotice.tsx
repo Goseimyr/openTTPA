@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney, publicCampaignUrl } from "@/lib/format";
 import type { Campaign } from "@/lib/types";
 
 export function TransparencyNotice({ campaign }: { campaign: Campaign }) {
@@ -11,6 +11,24 @@ export function TransparencyNotice({ campaign }: { campaign: Campaign }) {
         gällande förordning (EU) 2024/900. Syftet är att göra politiska
         reklammeddelanden lättare att identifiera och förstå.
       </p>
+      {campaign.status === "archived" ? (
+        <p className="notice">Detta meddelande är arkiverat eftersom kampanjen inte längre är aktiv.</p>
+      ) : null}
+      {campaign.replaced_by_campaign ? (
+        <p className="notice">
+          Det finns en senare version av detta transparensmeddelande:{" "}
+          <a href={publicCampaignUrl(campaign.replaced_by_campaign.slug)}>
+            version {campaign.replaced_by_campaign.version}
+          </a>
+          .
+        </p>
+      ) : null}
+      {campaign.replaces_campaign ? (
+        <p className="notice">
+          Detta transparensmeddelande ersätter en tidigare version:{" "}
+          <a href={publicCampaignUrl(campaign.replaces_campaign.slug)}>version {campaign.replaces_campaign.version}</a>.
+        </p>
+      ) : null}
 
       <dl>
         <Info label="1. Sponsor" value={formatEntity({

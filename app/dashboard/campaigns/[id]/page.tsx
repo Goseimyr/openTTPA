@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { archiveCampaign, createCampaignVersion, publishCampaign } from "@/app/dashboard/actions";
 import { AutoDismissNotice } from "@/components/AutoDismissNotice";
 import { TransparencyNotice } from "@/components/TransparencyNotice";
 import { formatDate, normalizeOrganization, publicCampaignJsonUrl, publicCampaignUrl } from "@/lib/format";
@@ -22,7 +23,13 @@ export default async function CampaignPage({
 
   if (!user) redirect("/login");
 
-  const { data: campaign } = await supabase.from("campaigns").select("*, organizations(*)").eq("id", id).single();
+  const { data: campaign } = await supabase
+    .from("campaigns")
+    .select(
+      "*, organizations(*), replaces_campaign:campaigns!campaigns_replaces_campaign_id_fkey(id,name,slug,version), replaced_by_campaign:campaigns!campaigns_replaced_by_campaign_id_fkey(id,name,slug,version)"
+    )
+    .eq("id", id)
+    .single();
   if (!campaign) notFound();
 
   const organization = normalizeOrganization((campaign as Campaign).organizations || null) as Organization | null;
@@ -57,9 +64,30 @@ export default async function CampaignPage({
           <Detail label="Språk i reklamen" value={(campaign as Campaign).language} />
           <Detail label="Startdatum" value={formatDate((campaign as Campaign).period_start)} />
           <Detail label="Slutdatum" value={formatDate((campaign as Campaign).period_end)} />
+          <Detail label="Version" value={(campaign as Campaign).version} />
+          <Detail label="Publicerad" value={formatDateTime((campaign as Campaign).published_at)} />
+          <Detail label="Arkiverad" value={formatDateTime((campaign as Campaign).archived_at)} />
           <Detail label="Skapad" value={formatDateTime((campaign as Campaign).created_at)} />
           <Detail label="Senast uppdaterad" value={formatDateTime((campaign as Campaign).updated_at)} />
         </div>
+        {(campaign as Campaign).replaced_by_campaign ? (
+          <p className="notice">
+            Det finns en senare version av detta meddelande:{" "}
+            <Link href={`/dashboard/campaigns/${(campaign as Campaign).replaced_by_campaign?.id}`}>
+              version {(campaign as Campaign).replaced_by_campaign?.version}
+            </Link>
+            .
+          </p>
+        ) : null}
+        {(campaign as Campaign).replaces_campaign ? (
+          <p className="notice">
+            Detta meddelande ersätter{" "}
+            <Link href={`/dashboard/campaigns/${(campaign as Campaign).replaces_campaign?.id}`}>
+              version {(campaign as Campaign).replaces_campaign?.version}
+            </Link>
+            .
+          </p>
+        ) : null}
         <div className="qr-share">
           <img className="qr" src={qrUrl} alt={`QR-kod till ${publicUrl}`} />
           <div>
@@ -82,9 +110,30 @@ export default async function CampaignPage({
           </div>
         </div>
         <div className="actions card-actions">
-          <Link className="button secondary" href={`/dashboard/campaigns/${(campaign as Campaign).id}/edit`}>
-            Redigera kampanj
-          </Link>
+          {(campaign as Campaign).status === "draft" ? (
+            <>
+              <Link className="button secondary" href={`/dashboard/campaigns/${(campaign as Campaign).id}/edit`}>
+                Redigera kampanj
+              </Link>
+              <form action={publishCampaign}>
+                <input type="hidden" name="id" value={(campaign as Campaign).id} />
+                <button type="submit">Publicera meddelande</button>
+              </form>
+            </>
+          ) : (
+            <form action={createCampaignVersion}>
+              <input type="hidden" name="id" value={(campaign as Campaign).id} />
+              <button type="submit">Skapa ny version</button>
+            </form>
+          )}
+          {(campaign as Campaign).status === "active" ? (
+            <form action={archiveCampaign}>
+              <input type="hidden" name="id" value={(campaign as Campaign).id} />
+              <button type="submit" className="secondary">
+                Arkivera
+              </button>
+            </form>
+          ) : null}
         </div>
       </section>
 
@@ -141,7 +190,7 @@ function Detail({
 }
 
 function statusLabel(status: string) {
-  if (status === "active") return "Aktuell";
+  if (status === "active") return "Publicerad";
   if (status === "archived") return "Arkiverad";
   return "Utkast";
 }
