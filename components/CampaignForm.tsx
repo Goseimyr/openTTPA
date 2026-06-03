@@ -338,14 +338,26 @@ export function CampaignForm({
 
       <h2>Sponsor</h2>
       <p className="section-help">Den som står bakom reklamen och på vars vägnar den publiceras.</p>
-      <label className="checkbox-row">
-        <input
-          type="checkbox"
-          checked={sponsorDifferentFromOrganization}
-          onChange={(event) => setSponsorDifferentFromOrganization(event.target.checked)}
-        />
-        Annan än {currentOrganizationLabel}
-      </label>
+      <div className="grid two">
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="sponsor_choice"
+            checked={!sponsorDifferentFromOrganization}
+            onChange={() => setSponsorDifferentFromOrganization(false)}
+          />
+          {currentOrganizationLabel}
+        </label>
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="sponsor_choice"
+            checked={sponsorDifferentFromOrganization}
+            onChange={() => setSponsorDifferentFromOrganization(true)}
+          />
+          Annan
+        </label>
+      </div>
       {sponsorDifferentFromOrganization ? (
         <div className="grid two">
           <label>
@@ -395,14 +407,26 @@ export function CampaignForm({
 
       <h2>Kontrollerande enhet</h2>
       <p className="section-help">En aktör som ytterst styr sponsorn, till exempel genom ägande eller beslutande inflytande.</p>
-      <label className="checkbox-row">
-        <input
-          type="checkbox"
-          checked={controllingEntityDifferentFromOrganization}
-          onChange={(event) => setControllingEntityDifferentFromOrganization(event.target.checked)}
-        />
-        Annan än {currentOrganizationLabel}
-      </label>
+      <div className="grid two">
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="controlling_entity_choice"
+            checked={!controllingEntityDifferentFromOrganization}
+            onChange={() => setControllingEntityDifferentFromOrganization(false)}
+          />
+          {currentOrganizationLabel}
+        </label>
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="controlling_entity_choice"
+            checked={controllingEntityDifferentFromOrganization}
+            onChange={() => setControllingEntityDifferentFromOrganization(true)}
+          />
+          Annan
+        </label>
+      </div>
       {controllingEntityDifferentFromOrganization ? (
         <div className="grid two">
           <label>
@@ -451,14 +475,26 @@ export function CampaignForm({
 
       <h2>Betalare</h2>
       <p className="section-help">Den som betalar för reklamen, om det är någon annan än sponsorn.</p>
-      <label className="checkbox-row">
-        <input
-          type="checkbox"
-          checked={payerDifferentFromOrganization}
-          onChange={(event) => setPayerDifferentFromOrganization(event.target.checked)}
-        />
-        Annan än {currentOrganizationLabel}
-      </label>
+      <div className="grid two">
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="payer_choice"
+            checked={!payerDifferentFromOrganization}
+            onChange={() => setPayerDifferentFromOrganization(false)}
+          />
+          {currentOrganizationLabel}
+        </label>
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="payer_choice"
+            checked={payerDifferentFromOrganization}
+            onChange={() => setPayerDifferentFromOrganization(true)}
+          />
+          Annan
+        </label>
+      </div>
       {payerDifferentFromOrganization ? (
         <div className="grid two">
           <label>
@@ -494,14 +530,26 @@ export function CampaignForm({
 
       <h2>Utgivare</h2>
       <p className="section-help">Den aktör som publicerar, levererar eller sprider reklamen. Här anges också hur reklamen kan anmälas.</p>
-      <label className="checkbox-row">
-        <input
-          type="checkbox"
-          checked={publisherDifferentFromOrganization}
-          onChange={(event) => setPublisherDifferentFromOrganization(event.target.checked)}
-        />
-        Annan än {currentOrganizationLabel}
-      </label>
+      <div className="grid two">
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="publisher_choice"
+            checked={!publisherDifferentFromOrganization}
+            onChange={() => setPublisherDifferentFromOrganization(false)}
+          />
+          {currentOrganizationLabel}
+        </label>
+        <label className="checkbox-row">
+          <input
+            type="radio"
+            name="publisher_choice"
+            checked={publisherDifferentFromOrganization}
+            onChange={() => setPublisherDifferentFromOrganization(true)}
+          />
+          Annan
+        </label>
+      </div>
       {publisherDifferentFromOrganization ? (
         <div className="grid two">
           <label>
@@ -798,9 +846,6 @@ export function CampaignForm({
 
       <div className="actions">
         <button type="submit">{campaign ? "Spara ändringar" : "Skapa kampanj"}</button>
-        <button type="button" className="secondary" onClick={handleFillTestData}>
-          Fyll i testdata
-        </button>
       </div>
     </form>
   );
