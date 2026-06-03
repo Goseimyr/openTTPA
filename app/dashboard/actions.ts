@@ -18,12 +18,12 @@ async function requireUser() {
 
 const organizationSchema = z.object({
   name: z.string().min(1, "Organisationens namn saknas."),
-  org_number: z.string().optional(),
-  website: z.string().url("Webbplatsen måste vara en giltig URL (börja med https://).").optional().or(z.literal("")),
-  legal_form: z.string().optional(),
+  org_number: z.string().min(1, "Organisationsnummer saknas."),
+  website: z.string().url("Webbplatsen måste vara en giltig URL (börja med https://)."),
+  legal_form: z.string().min(1, "Juridisk form saknas."),
   registered_name: z.string().optional(),
-  email: z.string().email("E-postadressen måste vara giltig.").optional().or(z.literal("")),
-  address: z.string().optional(),
+  email: z.string().min(1, "E-postadress saknas.").email("E-postadressen måste vara giltig."),
+  address: z.string().min(1, "Postadress saknas."),
   establishment: z.string().optional()
 });
 
@@ -122,18 +122,20 @@ const campaignSchema = z.object({
 
 export async function createOrganization(formData: FormData) {
   const { supabase, user } = await requireUser();
+  const organizationName = String(formData.get("name") || "").trim();
+  const organizationAddress = String(formData.get("address") || "").trim();
 
   const raw = {
-    name: String(formData.get("name") || "").trim(),
+    name: organizationName,
     org_number: String(formData.get("org_number") || "").trim(),
     website: String(formData.get("website") || "").trim(),
     legal_form: String(formData.get("legal_form") || "").trim(),
-    registered_name: String(formData.get("registered_name") || "").trim(),
+    registered_name: String(formData.get("registered_name") || "").trim() || organizationName,
     email: String(formData.get("email") || "").trim(),
-    address: String(formData.get("address") || "").trim(),
+    address: organizationAddress,
     establishment:
       String(formData.get("establishment") || "").trim() ||
-      deriveEstablishmentFromAddress(String(formData.get("address") || "").trim()) ||
+      deriveEstablishmentFromAddress(organizationAddress) ||
       ""
   };
 
@@ -178,18 +180,20 @@ export async function createOrganization(formData: FormData) {
 export async function updateOrganization(formData: FormData) {
   const { supabase } = await requireUser();
   const id = String(formData.get("id") || "");
+  const organizationName = String(formData.get("name") || "").trim();
+  const organizationAddress = String(formData.get("address") || "").trim();
 
   const raw = {
-    name: String(formData.get("name") || "").trim(),
+    name: organizationName,
     org_number: String(formData.get("org_number") || "").trim(),
     website: String(formData.get("website") || "").trim(),
     legal_form: String(formData.get("legal_form") || "").trim(),
-    registered_name: String(formData.get("registered_name") || "").trim(),
+    registered_name: String(formData.get("registered_name") || "").trim() || organizationName,
     email: String(formData.get("email") || "").trim(),
-    address: String(formData.get("address") || "").trim(),
+    address: organizationAddress,
     establishment:
       String(formData.get("establishment") || "").trim() ||
-      deriveEstablishmentFromAddress(String(formData.get("address") || "").trim()) ||
+      deriveEstablishmentFromAddress(organizationAddress) ||
       ""
   };
 
