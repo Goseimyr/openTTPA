@@ -78,7 +78,7 @@ export default async function DashboardPage({
             </label>
             <label>
               Juridisk form
-              <select name="legal_form" defaultValue="">
+              <select name="legal_form" defaultValue="" required>
                 <option value="">Välj juridisk form</option>
                 <option value="juridisk_person">Juridisk person</option>
                 <option value="fysisk_person">Fysisk person</option>
@@ -87,19 +87,19 @@ export default async function DashboardPage({
             </label>
             <label>
               Organisationsnummer
-              <input name="org_number" />
+              <input name="org_number" required />
             </label>
             <label>
               E-postadress
-              <input name="email" type="email" />
+              <input name="email" type="email" required />
             </label>
             <label>
               Postadress
-              <input name="address" />
+              <input name="address" required />
             </label>
             <label>
               Webbplats
-              <input name="website" type="url" placeholder="https://..." />
+              <input name="website" type="url" placeholder="https://..." required />
             </label>
             <label>
               Etableringsort, om annan än postadress

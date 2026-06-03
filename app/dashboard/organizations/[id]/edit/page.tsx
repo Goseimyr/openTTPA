@@ -52,7 +52,7 @@ export default async function EditOrganizationPage({
           </label>
           <label>
             Juridisk form
-            <select name="legal_form" defaultValue={organization.legal_form || ""}>
+            <select name="legal_form" defaultValue={organization.legal_form || ""} required>
               <option value="">Välj juridisk form</option>
               <option value="juridisk_person">Juridisk person</option>
               <option value="fysisk_person">Fysisk person</option>
@@ -61,19 +61,19 @@ export default async function EditOrganizationPage({
           </label>
           <label>
             Organisationsnummer
-            <input name="org_number" defaultValue={organization.org_number || ""} />
+            <input name="org_number" defaultValue={organization.org_number || ""} required />
           </label>
           <label>
             E-postadress
-            <input name="email" type="email" defaultValue={organization.email || ""} />
+            <input name="email" type="email" defaultValue={organization.email || ""} required />
           </label>
           <label>
             Postadress
-            <input name="address" defaultValue={organization.address || ""} />
+            <input name="address" defaultValue={organization.address || ""} required />
           </label>
           <label>
             Webbplats
-            <input name="website" type="url" placeholder="https://..." defaultValue={organization.website || ""} />
+            <input name="website" type="url" placeholder="https://..." defaultValue={organization.website || ""} required />
           </label>
           <label>
             Etableringsort, om annan än postadress
