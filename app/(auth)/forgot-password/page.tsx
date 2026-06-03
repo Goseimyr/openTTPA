@@ -4,7 +4,7 @@ import { resetPassword } from "../login/actions";
 export default async function ForgotPasswordPage({
   searchParams
 }: {
-  searchParams: Promise<{ message?: string }>;
+  searchParams: Promise<{ message?: string; email?: string }>;
 }) {
   const params = await searchParams;
   const isSuccess = params.message === "Om e-postadressen finns skickas en återställningslänk.";
@@ -27,7 +27,7 @@ export default async function ForgotPasswordPage({
             ) : null}
             <label>
               E-post
-              <input name="email" type="email" autoComplete="email" required />
+              <input name="email" type="email" autoComplete="email" defaultValue={params.email || ""} required />
             </label>
             <button type="submit">Skicka återställningslänk</button>
           </form>

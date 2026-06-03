@@ -8,7 +8,18 @@ import { createOrganization } from "./actions";
 export default async function DashboardPage({
   searchParams
 }: {
-  searchParams: Promise<{ message?: string; new?: string }>;
+  searchParams: Promise<{
+    message?: string;
+    new?: string;
+    name?: string;
+    registered_name?: string;
+    legal_form?: string;
+    org_number?: string;
+    email?: string;
+    address?: string;
+    website?: string;
+    establishment?: string;
+  }>;
 }) {
   const params = await searchParams;
 
@@ -70,15 +81,15 @@ export default async function DashboardPage({
           <div className="organization-detail-grid">
             <label>
               Namn
-              <input name="name" required />
+              <input name="name" defaultValue={params.name || ""} required />
             </label>
             <label>
               Registrerat namn, om annat
-              <input name="registered_name" />
+              <input name="registered_name" defaultValue={params.registered_name || ""} />
             </label>
             <label>
               Juridisk form
-              <select name="legal_form" defaultValue="" required>
+              <select name="legal_form" defaultValue={params.legal_form || ""} required>
                 <option value="">Välj juridisk form</option>
                 <option value="juridisk_person">Juridisk person</option>
                 <option value="fysisk_person">Fysisk person</option>
@@ -87,23 +98,23 @@ export default async function DashboardPage({
             </label>
             <label>
               Organisationsnummer
-              <input name="org_number" required />
+              <input name="org_number" defaultValue={params.org_number || ""} required />
             </label>
             <label>
               E-postadress
-              <input name="email" type="email" required />
+              <input name="email" type="email" defaultValue={params.email || ""} required />
             </label>
             <label>
               Postadress
-              <input name="address" required />
+              <input name="address" defaultValue={params.address || ""} required />
             </label>
             <label>
               Webbplats
-              <input name="website" type="url" placeholder="https://..." required />
+              <input name="website" type="url" placeholder="https://..." defaultValue={params.website || ""} required />
             </label>
             <label>
               Etableringsort, om annan än postadress
-              <input name="establishment" />
+              <input name="establishment" defaultValue={params.establishment || ""} />
             </label>
           </div>
           <div className="actions card-actions">
