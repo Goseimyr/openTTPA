@@ -11,9 +11,6 @@ export function TransparencyNotice({ campaign }: { campaign: Campaign }) {
         gällande förordning (EU) 2024/900. Syftet är att göra politiska
         reklammeddelanden lättare att identifiera och förstå.
       </p>
-      {campaign.status === "archived" ? (
-        <p className="notice">Detta meddelande är arkiverat eftersom kampanjen inte längre är aktiv.</p>
-      ) : null}
       {campaign.replaced_by_campaign ? (
         <p className="notice">
           Det finns en senare version av detta transparensmeddelande:{" "}
@@ -23,13 +20,6 @@ export function TransparencyNotice({ campaign }: { campaign: Campaign }) {
           .
         </p>
       ) : null}
-      {campaign.replaces_campaign ? (
-        <p className="notice">
-          Detta transparensmeddelande ersätter en tidigare version:{" "}
-          <a href={publicCampaignUrl(campaign.replaces_campaign.slug)}>version {campaign.replaces_campaign.version}</a>.
-        </p>
-      ) : null}
-
       <dl>
         <Info label="1. Sponsor" value={formatEntity({
           name: campaign.sponsor_name,
@@ -116,7 +106,7 @@ export function TransparencyNotice({ campaign }: { campaign: Campaign }) {
         />
         <Info
           label="13. Tidigare avbrott eller återkallelse"
-          value={campaign.prior_non_compliance ? campaign.prior_non_compliance_description || "Ja" : "Nej"}
+          value={formatPriorPublication(campaign)}
         />
       </dl>
 
@@ -304,6 +294,29 @@ function formatComplaint(campaign: Campaign) {
       items={[
         { label: "Anmälan görs till", value: campaign.publisher_name || "Utgivaren" },
         { label: "Kontaktperson för anmälan av överträdelse", value: campaign.complaint_contact }
+      ]}
+    />
+  );
+}
+
+function formatPriorPublication(campaign: Campaign) {
+  return (
+    <ValueList
+      items={[
+        {
+          label: "Tidigare avbrott eller återkallelse",
+          value: campaign.prior_non_compliance ? campaign.prior_non_compliance_description || "Ja" : "Nej"
+        },
+        {
+          label: "Ersätter tidigare version",
+          value: campaign.replaces_campaign ? (
+            <a href={publicCampaignUrl(campaign.replaces_campaign.slug)}>
+              version {campaign.replaces_campaign.version}
+            </a>
+          ) : (
+            "Nej"
+          )
+        }
       ]}
     />
   );

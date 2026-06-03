@@ -39,6 +39,7 @@ export default async function OrganizationPage({
     .from("campaigns")
     .select("*, organizations(*)")
     .eq("organization_id", organization.id)
+    .is("replaced_by_campaign_id", null)
     .order("updated_at", { ascending: false });
 
   const { data: viewRows } = await supabase

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { campaignForPublishedView } from "@/lib/campaignSnapshot";
+import { loadCampaignVersionLinks } from "@/lib/campaignVersionLinks";
 import { publicCampaignUrl } from "@/lib/format";
 import { createClient } from "@/utils/supabase/server";
 import type { Campaign } from "@/lib/types";
@@ -7,19 +8,21 @@ import type { Campaign } from "@/lib/types";
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("campaigns")
-    .select(
-      "*, organizations(*), replaces_campaign:campaigns!campaigns_replaces_campaign_id_fkey(id,name,slug,version), replaced_by_campaign:campaigns!campaigns_replaced_by_campaign_id_fkey(id,name,slug,version)"
-    )
+    .select("*, organizations(*)")
     .eq("slug", slug)
     .single();
+
+  if (error) {
+    console.error("Failed to load transparency notice JSON", { slug, error });
+  }
 
   if (!data) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const campaign = campaignForPublishedView(data as Campaign);
+  const campaign = campaignForPublishedView(await loadCampaignVersionLinks(supabase, data as Campaign));
   if (campaign.status === "draft") {
     const canPreview = await canPreviewCampaign(supabase, campaign);
     if (!canPreview) {
