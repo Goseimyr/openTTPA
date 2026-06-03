@@ -12,7 +12,7 @@ export default async function LoginPage({
     <main className="shell">
       <section className="grid two" style={{ alignItems: "start", paddingTop: 48 }}>
         <div className="stack">
-          <h1>Välkommen tillbaka</h1>
+          <h1>Välkommen</h1>
           <p className="lead">
             Fortsätt till din organisation, dina kampanjer och publicerade
             transparensmeddelanden.

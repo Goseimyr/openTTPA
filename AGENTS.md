@@ -1,64 +1,63 @@
 # AGENTS.md
 
-## Projekt
+## Project
 
-OpenTTPA är en Next.js/Vercel-applikation för att skapa, publicera och
-tillhandahålla TTPA-meddelanden för politisk reklam enligt EU:s regler om
-transparens och inriktning.
+OpenTTPA is a Next.js/Vercel application for creating, publishing, and serving
+TTPA notices for political advertising under the EU rules on transparency and
+targeting.
 
-Tjänsten använder Supabase för auth, databas och RLS. Publicerade
-transparensmeddelanden ska vara spårbara, permanenta och inte kunna ändras som
-vanlig redigering.
+The service uses Supabase for auth, database, and RLS. Published transparency
+notices must be traceable, permanent, and protected from ordinary editing.
 
-## Viktig princip
+## Core Principle
 
-Det här är ett juridiskt känsligt system. Ändringar ska göras försiktigt och
-med fokus på spårbarhet, korrekt metadata och tydliga användarflöden.
+This is a legally sensitive system. Changes should be made carefully, with a
+focus on traceability, correct metadata, and clear user flows.
 
-OpenTTPA hjälper användare att skapa transparensmeddelanden, men tar inte
-juridiskt ansvar för publicerad information.
+OpenTTPA helps users create transparency notices, but does not assume legal
+responsibility for published information.
 
-## Teknik
+## Tech Stack
 
 - Next.js App Router
 - React
 - TypeScript
-- Supabase Auth, Postgres och RLS
+- Supabase Auth, Postgres, and RLS
 - Supabase SSR helpers
 - Vercel Analytics
-- SQL-migrationer i `supabase/migrations/`
+- SQL migrations in `supabase/migrations/`
 
-## Lokala kommandon
+## Local Commands
 
-Installera beroenden:
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-Starta utveckling:
+Start development:
 
 ```bash
 npm run dev
 ```
 
-Bygg och kontrollera:
+Build and check:
 
 ```bash
 npm run build
 ```
 
-Kör Supabase-migrationer mot länkat projekt:
+Run Supabase migrations against the linked project:
 
 ```bash
 npm run db:push
 ```
 
-## Git-arbetsflöde
+## Git Workflow
 
-Arbeta inte direkt på `main` om det går att undvika.
+Avoid working directly on `main` whenever possible.
 
-Rekommenderat flöde:
+Recommended flow:
 
 ```bash
 git switch main
@@ -66,14 +65,14 @@ git pull --ff-only origin main
 git switch -c codex/short-description
 ```
 
-Innan PR:
+Before opening a PR:
 
 ```bash
 npm run build
 git status --short
 ```
 
-Pusha och skapa PR:
+Push and create a PR:
 
 ```bash
 git add .
@@ -82,89 +81,91 @@ git push -u origin codex/short-description
 gh pr create --base main --head codex/short-description
 ```
 
-Efter merge:
+After merge:
 
 ```bash
 git switch main
 git pull --ff-only origin main
 ```
 
-## Databas och migrationer
+## Database and Migrations
 
-Alla schemaändringar ska göras som SQL-migrationer i `supabase/migrations/`.
+All schema changes must be made as SQL migrations in `supabase/migrations/`.
 
-Ändra inte tabeller, RLS-policyer, triggers, funktioner eller vyer direkt i
-Supabase Dashboard om ändringen ska leva kvar i projektet.
+Do not change tables, RLS policies, triggers, functions, or views directly in
+the Supabase Dashboard if the change is meant to persist in the project.
 
-Tänk särskilt på:
+Pay particular attention to:
 
-- RLS-policyer får inte skapa rekursion.
-- Publicerade meddelanden ska skyddas mot vanlig uppdatering och radering.
-- Eventlogg och snapshot ska bevara spårbarhet.
-- Migrationer ska vara idempotenta där det är rimligt, till exempel med
+- RLS policies must not create recursion.
+- Published notices must be protected from ordinary updates and deletion.
+- Event logs and snapshots must preserve traceability.
+- Migrations should be idempotent where reasonable, for example with
   `if not exists`.
 
-`supabase/.temp/` ska inte committas.
+`supabase/.temp/` must not be committed.
 
-## Publicerings- och versionsregler
+## Publication and Versioning Rules
 
-Ett kampanjmeddelande kan vara:
+A campaign notice can have one of these statuses:
 
 - `draft`
 - `active`
 - `archived`
 
-Regler:
+Rules:
 
-- Utkast får redigeras.
-- Publicerade meddelanden får inte redigeras direkt.
-- Arkiverade meddelanden får inte redigeras direkt.
-- Vill man ändra ett publicerat meddelande ska en ny version skapas.
-- Ny version får bara skapas från aktuell aktiv version.
-- En ersatt version ska arkiveras när ersättaren publiceras.
-- Äldre versioner ska vara fortsatt tillgängliga via permanent länk.
-- Om ett meddelande ersätts ska det synas i transparensmeddelandet.
-- Kampanjlistor ska normalt visa senaste versionen, inte alla historiska
-  versioner.
+- Drafts may be edited.
+- Published notices must not be edited directly.
+- Archived notices must not be edited directly.
+- To change a published notice, create a new version.
+- A new version may only be created from the current active version.
+- A replaced version must be archived when its replacement is published.
+- Older versions must remain available through permanent links.
+- If a notice replaces another notice, that must be shown in the transparency
+  notice.
+- Campaign lists should normally show the latest version, not every historical
+  version.
 
-## Transparensmeddelande
+## Transparency Notice
 
-Komponenten `components/TransparencyNotice.tsx` ska ligga nära mallen i
-EU-kommissionens genomförandeförordning 2025/1410.
+The `components/TransparencyNotice.tsx` component should stay close to the
+template in Commission Implementing Regulation (EU) 2025/1410.
 
-Var försiktig med att lägga till extra text i själva transparensmeddelandet. Om
-extra produktinformation behövs, lägg den hellre utanför den numrerade mallen.
+Be careful when adding extra text inside the transparency notice itself. If
+extra product information is needed, place it outside the numbered template
+instead.
 
-Viktiga principer:
+Important principles:
 
-- Rubriker och punkter ska vara tydliga och följa mallen.
-- Obligatorisk information ska inte döljas i publicerad vy.
-- Om ett fält saknas ska det framgå på ett begripligt sätt.
-- Maskinläsbar version ska hållas i synk med den visuella versionen.
-- Publicerade meddelanden ska renderas från snapshot när snapshot finns.
+- Headings and numbered items should be clear and follow the template.
+- Mandatory information must not be hidden in the published view.
+- If a field is missing, that should be shown in a clear way.
+- The machine-readable version must stay in sync with the visual version.
+- Published notices should render from the snapshot when a snapshot exists.
 
-## Formulär
+## Forms
 
-Kampanjformuläret ska vara lätt att använda även för personer utan juridisk
-eller teknisk vana.
+The campaign form should be easy to use for people without legal or technical
+expertise.
 
-Principer:
+Principles:
 
-- Markera obligatoriska fält med röd asterisk.
-- Visa avancerade fält först när användaren kryssar i att de behövs.
-- Förval ska hjälpa användaren, till exempel vald organisation som
-  sponsor/betalare/utgivare.
-- Testdata-knappen ska fylla i ett realistiskt komplett testfall.
-- Vid fel ska användarens data helst inte försvinna.
+- Mark required fields with a red asterisk.
+- Show advanced fields only when the user checks that they are needed.
+- Defaults should help the user, for example using the selected organization as
+  sponsor/payer/publisher.
+- The test data button should fill in a realistic complete test case.
+- User-entered data should preferably not disappear when an error occurs.
 
-## UI och språk
+## UI and Language
 
-Språket i appen är svenska.
+The application UI is in Swedish.
 
-Skriv enkelt, tydligt och sakligt. Undvik onödigt juridiskt krångliga
-formuleringar i användargränssnittet, men var korrekt när regelverk beskrivs.
+Use simple, clear, and factual language. Avoid unnecessarily complex legal
+wording in the user interface, but be accurate when describing regulations.
 
-Använd konsekventa begrepp:
+Use consistent product terms:
 
 - Meddelande
 - Kampanj
@@ -173,69 +174,67 @@ Använd konsekventa begrepp:
 - Redigera meddelande
 - Skapa ny version
 
-## Auth och navigation
+## Auth and Navigation
 
-Inloggade användare ska kunna se:
+Signed-in users should be able to see:
 
-- aktuell användare
-- organisationer de har åtkomst till
-- kampanjer per organisation
-- användare kopplade till organisationen
-- eventlogg för organisation och kampanj
+- the current user
+- organizations they have access to
+- campaigns per organization
+- users connected to the organization
+- event logs for organizations and campaigns
 
-Breadcrumbs ska vara logiska och hjälpa användaren hitta tillbaka.
+Breadcrumbs should be logical and help users navigate back.
 
-Exempel:
+Example:
 
 ```text
-Start > Organisationer > Organisationens namn > Kampanjens namn
+Start > Organisationer > Organization name > Campaign name
 ```
 
-## Säkerhet
+## Security
 
-Använd inte service role key i klientkod.
+Do not use the service role key in client code.
 
-Admin/Supabase service role ska bara användas i serverkod där det verkligen
-behövs.
+The admin/Supabase service role should only be used in server code where it is
+actually needed.
 
-Var särskilt försiktig med:
+Be especially careful with:
 
 - RLS
 - auth redirects
-- publicerade meddelanden
-- eventlogg
+- published notices
+- event logs
 - snapshots
-- personuppgifter
-- permanenta länkar
+- personal data
+- permanent links
 
-## Personuppgifter och kakor
+## Personal Data and Cookies
 
-Sidorna för personuppgifter och kakor ska hållas i synk med faktisk
-funktionalitet.
+The personal data and cookie pages must stay in sync with the actual service
+behavior.
 
-Om tjänsten börjar använda fler kakor, trackingteknik eller externa tjänster ska
-sidan om kakor uppdateras.
+If the service starts using more cookies, tracking technology, or external
+services, update the cookie page.
 
-Om personuppgiftsbehandlingen ändras ska sidan om behandling av personuppgifter
-uppdateras.
+If personal data processing changes, update the personal data processing page.
 
-## Vid ändringar
+## When Making Changes
 
-Innan du avslutar en ändring:
+Before finishing a change:
 
-1. Kör `npm run build`.
-2. Kontrollera `git diff --check`.
-3. Kontrollera att ändringen inte bryter publiceringsflödet.
-4. Kontrollera att berörda sidor fortfarande har logiska breadcrumbs.
-5. Om databasen ändrats, lägg till migration.
-6. Om publika transparensmeddelandet ändrats, kontrollera även JSON-versionen.
+1. Run `npm run build`.
+2. Check `git diff --check`.
+3. Check that the change does not break the publication flow.
+4. Check that affected pages still have logical breadcrumbs.
+5. If the database changed, add a migration.
+6. If the public transparency notice changed, check the JSON version as well.
 
-## Rör inte i onödan
+## Avoid Unnecessary Churn
 
-Undvik stora refaktoriseringar om uppgiften är liten.
+Avoid large refactors when the task is small.
 
-Behåll befintlig struktur och stil om det inte finns ett tydligt skäl att
-ändra.
+Keep the existing structure and style unless there is a clear reason to change
+them.
 
-Ändra inte juridiska formuleringar lättvindigt. Vid osäkerhet, föreslå
-ändringen först.
+Do not change legal wording lightly. When unsure, propose the change first.
