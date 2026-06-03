@@ -5,6 +5,7 @@ import { archiveCampaign, createCampaignVersion, publishCampaign } from "@/app/d
 import { AutoDismissNotice } from "@/components/AutoDismissNotice";
 import { TransparencyNotice } from "@/components/TransparencyNotice";
 import { campaignForPublishedView } from "@/lib/campaignSnapshot";
+import { loadCampaignVersionLinks } from "@/lib/campaignVersionLinks";
 import { formatDate, normalizeOrganization, publicCampaignJsonUrl, publicCampaignUrl } from "@/lib/format";
 import { createClient } from "@/utils/supabase/server";
 import type { Campaign, Organization } from "@/lib/types";
@@ -24,35 +25,39 @@ export default async function CampaignPage({
 
   if (!user) redirect("/login");
 
-  const { data: campaign } = await supabase
+  const { data: campaign, error: campaignError } = await supabase
     .from("campaigns")
-    .select(
-      "*, organizations(*), replaces_campaign:campaigns!campaigns_replaces_campaign_id_fkey(id,name,slug,version), replaced_by_campaign:campaigns!campaigns_replaced_by_campaign_id_fkey(id,name,slug,version)"
-    )
+    .select("*, organizations(*)")
     .eq("id", id)
     .single();
+
+  if (campaignError) {
+    console.error("Failed to load campaign", { id, error: campaignError });
+  }
+
   if (!campaign) notFound();
 
-  const organization = normalizeOrganization((campaign as Campaign).organizations || null) as Organization | null;
+  const campaignRecord = await loadCampaignVersionLinks(supabase, campaign as Campaign);
+  const organization = normalizeOrganization(campaignRecord.organizations || null) as Organization | null;
   const { data: membership } = await supabase
     .from("organization_members")
     .select("user_id")
     .eq("user_id", user.id)
-    .eq("organization_id", (campaign as Campaign).organization_id)
+    .eq("organization_id", campaignRecord.organization_id)
     .maybeSingle();
 
   if (!membership) notFound();
 
-  const noticeCampaign = campaignForPublishedView(campaign as Campaign);
-  const publicUrl = publicCampaignUrl((campaign as Campaign).slug);
-  const jsonUrl = publicCampaignJsonUrl((campaign as Campaign).slug);
-  const qrUrl = `/api/qr/${(campaign as Campaign).slug}`;
+  const noticeCampaign = campaignForPublishedView(campaignRecord);
+  const publicUrl = publicCampaignUrl(campaignRecord.slug);
+  const jsonUrl = publicCampaignJsonUrl(campaignRecord.slug);
+  const qrUrl = `/api/qr/${campaignRecord.slug}`;
 
   return (
     <main className="shell" style={{ paddingBottom: 64 }}>
       <section className="row" style={{ alignItems: "end", paddingTop: 28 }}>
         <div>
-          <h1>{(campaign as Campaign).name}</h1>
+          <h1>{campaignRecord.name}</h1>
           <p className="lead">Se kampanjens uppgifter och länkar till transparensmeddelandet.</p>
         </div>
       </section>
@@ -62,34 +67,17 @@ export default async function CampaignPage({
       <section className="organization-details" style={{ margin: "20px 0" }}>
         <div className="organization-detail-grid">
           <Detail label="Organisation" value={organization?.name || "Ej angiven"} />
-          <Detail label="Status" value={statusLabel((campaign as Campaign).status)} />
-          <Detail label="Språk i reklamen" value={(campaign as Campaign).language} />
-          <Detail label="Startdatum" value={formatDate((campaign as Campaign).period_start)} />
-          <Detail label="Slutdatum" value={formatDate((campaign as Campaign).period_end)} />
-          <Detail label="Version" value={(campaign as Campaign).version} />
-          <Detail label="Publicerad" value={formatDateTime((campaign as Campaign).published_at)} />
-          <Detail label="Arkiverad" value={formatDateTime((campaign as Campaign).archived_at)} />
-          <Detail label="Skapad" value={formatDateTime((campaign as Campaign).created_at)} />
-          <Detail label="Senast uppdaterad" value={formatDateTime((campaign as Campaign).updated_at)} />
+          <Detail label="Status" value={statusLabel(campaignRecord.status)} />
+          <Detail label="Språk i reklamen" value={campaignRecord.language} />
+          <Detail label="Senast uppdaterad" value={formatDateTime(campaignRecord.updated_at)} />
+          <Detail label="Startdatum" value={formatDate(campaignRecord.period_start)} />
+          <Detail label="Slutdatum" value={formatDate(campaignRecord.period_end)} />
+          <Detail label="Version" value={campaignRecord.version} />
+          <Detail label="Versioner" value={<VersionLinks campaign={campaignRecord} />} />
+          <Detail label="Skapad" value={formatDateTime(campaignRecord.created_at)} />
+          <Detail label="Publicerad" value={formatDateTime(campaignRecord.published_at)} />
+          <Detail label="Arkiverad" value={formatDateTime(campaignRecord.archived_at)} />
         </div>
-        {(campaign as Campaign).replaced_by_campaign ? (
-          <p className="notice">
-            Det finns en senare version av detta meddelande:{" "}
-            <Link href={`/dashboard/campaigns/${(campaign as Campaign).replaced_by_campaign?.id}`}>
-              version {(campaign as Campaign).replaced_by_campaign?.version}
-            </Link>
-            .
-          </p>
-        ) : null}
-        {(campaign as Campaign).replaces_campaign ? (
-          <p className="notice">
-            Detta meddelande ersätter{" "}
-            <Link href={`/dashboard/campaigns/${(campaign as Campaign).replaces_campaign?.id}`}>
-              version {(campaign as Campaign).replaces_campaign?.version}
-            </Link>
-            .
-          </p>
-        ) : null}
         <div className="qr-share">
           <img className="qr" src={qrUrl} alt={`QR-kod till ${publicUrl}`} />
           <div>
@@ -105,38 +93,38 @@ export default async function CampaignPage({
               <a className="button secondary" href={qrUrl} target="_blank" rel="noreferrer">
                 Öppna QR-kod
               </a>
-              <a className="button secondary" href={qrUrl} download={`${(campaign as Campaign).slug}-qr.svg`}>
+              <a className="button secondary" href={qrUrl} download={`${campaignRecord.slug}-qr.svg`}>
                 Ladda ner SVG
               </a>
             </div>
           </div>
         </div>
         <div className="actions card-actions">
-          {(campaign as Campaign).status === "draft" ? (
+          {campaignRecord.status === "draft" ? (
             <>
-              <Link className="button secondary" href={`/dashboard/campaigns/${(campaign as Campaign).id}/edit`}>
-                Redigera kampanj
-              </Link>
               <form action={publishCampaign}>
-                <input type="hidden" name="id" value={(campaign as Campaign).id} />
+                <input type="hidden" name="id" value={campaignRecord.id} />
                 <button type="submit">Publicera meddelande</button>
               </form>
+              <Link className="button secondary" href={`/dashboard/campaigns/${campaignRecord.id}/edit`}>
+                Redigera meddelande
+              </Link>
             </>
-          ) : (
+          ) : campaignRecord.status === "active" && !campaignRecord.replaced_by_campaign ? (
             <form action={createCampaignVersion}>
-              <input type="hidden" name="id" value={(campaign as Campaign).id} />
+              <input type="hidden" name="id" value={campaignRecord.id} />
               <button type="submit">Skapa ny version</button>
             </form>
-          )}
-          {(campaign as Campaign).status === "active" ? (
+          ) : null}
+          {campaignRecord.status === "active" && !campaignRecord.replaced_by_campaign ? (
             <form action={archiveCampaign}>
-              <input type="hidden" name="id" value={(campaign as Campaign).id} />
+              <input type="hidden" name="id" value={campaignRecord.id} />
               <button type="submit" className="secondary">
                 Arkivera
               </button>
             </form>
           ) : null}
-          <Link className="button secondary" href={`/dashboard/campaigns/${(campaign as Campaign).id}/events`}>
+          <Link className="button secondary" href={`/dashboard/campaigns/${campaignRecord.id}/events`}>
             Visa eventlogg
           </Link>
         </div>
@@ -191,6 +179,39 @@ function Detail({
         )}
       </p>
     </div>
+  );
+}
+
+function VersionLinks({ campaign }: { campaign: Campaign }) {
+  const versions: ReactNode[] = [];
+
+  if (campaign.replaces_campaign) {
+    versions.push(
+      <Link key="previous" href={`/dashboard/campaigns/${campaign.replaces_campaign.id}`}>
+        Version {campaign.replaces_campaign.version}
+      </Link>
+    );
+  }
+
+  versions.push(<span key="current">Version {campaign.version} (denna)</span>);
+
+  if (campaign.replaced_by_campaign) {
+    versions.push(
+      <Link key="next" href={`/dashboard/campaigns/${campaign.replaced_by_campaign.id}`}>
+        Version {campaign.replaced_by_campaign.version}
+      </Link>
+    );
+  }
+
+  return (
+    <span>
+      {versions.map((version, index) => (
+        <span key={index}>
+          {index > 0 ? " | " : null}
+          {version}
+        </span>
+      ))}
+    </span>
   );
 }
 

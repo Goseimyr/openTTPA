@@ -539,8 +539,12 @@ export async function saveCampaign(formData: FormData) {
 
   if (!id) {
     const slug = randomUUID().replaceAll("-", "").slice(0, 12);
-    const { error } = await supabase.from("campaigns").insert({ ...payload, slug, publication_group_id: randomUUID() });
-    if (error) {
+    const { data: createdCampaign, error } = await supabase
+      .from("campaigns")
+      .insert({ ...payload, slug, publication_group_id: randomUUID() })
+      .select("id")
+      .single();
+    if (error || !createdCampaign) {
       console.error("Failed to create campaign", { organizationId: organization_id, error });
       redirect(
         `/dashboard/campaigns/new?organization=${encodeURIComponent(organization_id)}&message=${encodeURIComponent(
@@ -548,6 +552,11 @@ export async function saveCampaign(formData: FormData) {
         )}`
       );
     }
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/organizations/${organization_id}`);
+    revalidatePath(`/dashboard/campaigns/${createdCampaign.id}`);
+    redirect(`/dashboard/campaigns/${createdCampaign.id}?message=${encodeURIComponent("Kampanjen har sparats.")}`);
   } else {
     const { data: existingCampaign } = await supabase.from("campaigns").select("status").eq("id", id).single();
     if (existingCampaign?.status !== "draft") {
@@ -611,15 +620,34 @@ export async function publishCampaign(formData: FormData) {
   }
 
   if (campaign.replaces_campaign_id) {
-    await supabase
+    const { data: archivedSource, error: supersedeError } = await supabase
       .from("campaigns")
-      .update({ replaced_by_campaign_id: id })
-      .eq("id", campaign.replaces_campaign_id);
+      .update({ replaced_by_campaign_id: id, status: "archived", archived_at: publishedAt })
+      .eq("id", campaign.replaces_campaign_id)
+      .eq("status", "active")
+      .select("id")
+      .maybeSingle();
+
+    if (supersedeError || !archivedSource) {
+      console.error("Failed to archive superseded campaign", {
+        campaignId: campaign.replaces_campaign_id,
+        replacementCampaignId: id,
+        error: supersedeError
+      });
+      redirect(`/dashboard/campaigns/${id}?message=${encodeURIComponent("Tidigare version kunde inte arkiveras.")}`);
+    }
+
     await logCampaignPublicationEvent(supabase, {
       campaignId: campaign.replaces_campaign_id,
       eventType: "superseded",
       userId: user.id,
       metadata: { replaced_by_campaign_id: id }
+    });
+    await logCampaignPublicationEvent(supabase, {
+      campaignId: campaign.replaces_campaign_id,
+      eventType: "archived",
+      userId: user.id,
+      metadata: { archived_at: publishedAt, replaced_by_campaign_id: id }
     });
   }
 
@@ -690,6 +718,35 @@ export async function createCampaignVersion(formData: FormData) {
 
   if (source.status === "draft") {
     redirect(`/dashboard/campaigns/${id}/edit?message=${encodeURIComponent("Utkast kan redigeras direkt.")}`);
+  }
+  if (source.status !== "active") {
+    redirect(
+      `/dashboard/campaigns/${id}?message=${encodeURIComponent(
+        "Ny version kan bara skapas från ett aktivt meddelande."
+      )}`
+    );
+  }
+  if (source.replaced_by_campaign_id) {
+    redirect(
+      `/dashboard/campaigns/${id}?message=${encodeURIComponent(
+        "Ny version kan inte skapas från ett meddelande som redan har ersatts."
+      )}`
+    );
+  }
+
+  const { data: existingDraft } = await supabase
+    .from("campaigns")
+    .select("id")
+    .eq("replaces_campaign_id", source.id)
+    .eq("status", "draft")
+    .maybeSingle();
+
+  if (existingDraft) {
+    redirect(
+      `/dashboard/campaigns/${existingDraft.id}/edit?message=${encodeURIComponent(
+        "Det finns redan ett utkast till ny version."
+      )}`
+    );
   }
 
   const {
