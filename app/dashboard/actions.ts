@@ -124,25 +124,27 @@ export async function createOrganization(formData: FormData) {
   const { supabase, user } = await requireUser();
   const organizationName = String(formData.get("name") || "").trim();
   const organizationAddress = String(formData.get("address") || "").trim();
-
-  const raw = {
+  const formValues = {
     name: organizationName,
     org_number: String(formData.get("org_number") || "").trim(),
     website: String(formData.get("website") || "").trim(),
     legal_form: String(formData.get("legal_form") || "").trim(),
-    registered_name: String(formData.get("registered_name") || "").trim() || organizationName,
+    registered_name: String(formData.get("registered_name") || "").trim(),
     email: String(formData.get("email") || "").trim(),
     address: organizationAddress,
-    establishment:
-      String(formData.get("establishment") || "").trim() ||
-      deriveEstablishmentFromAddress(organizationAddress) ||
-      ""
+    establishment: String(formData.get("establishment") || "").trim()
+  };
+
+  const raw = {
+    ...formValues,
+    registered_name: formValues.registered_name || organizationName,
+    establishment: formValues.establishment || deriveEstablishmentFromAddress(organizationAddress) || ""
   };
 
   const result = organizationSchema.safeParse(raw);
   if (!result.success) {
     const message = result.error.issues[0]?.message || "Ogiltiga uppgifter.";
-    redirect(`/dashboard?new=organization&message=${encodeURIComponent(message)}`);
+    redirect(organizationFormUrl(message, formValues));
   }
 
   const { name, org_number, website, legal_form, registered_name, email, address, establishment } = result.data;
@@ -163,9 +165,7 @@ export async function createOrganization(formData: FormData) {
       userId: user.id,
       error
     });
-    redirect(
-      `/dashboard?new=organization&message=${encodeURIComponent(error?.message || "Organisationen kunde inte skapas.")}`
-    );
+    redirect(organizationFormUrl(error?.message || "Organisationen kunde inte skapas.", formValues));
   }
 
   console.info("Organization created", {
@@ -182,19 +182,21 @@ export async function updateOrganization(formData: FormData) {
   const id = String(formData.get("id") || "");
   const organizationName = String(formData.get("name") || "").trim();
   const organizationAddress = String(formData.get("address") || "").trim();
-
-  const raw = {
+  const formValues = {
     name: organizationName,
     org_number: String(formData.get("org_number") || "").trim(),
     website: String(formData.get("website") || "").trim(),
     legal_form: String(formData.get("legal_form") || "").trim(),
-    registered_name: String(formData.get("registered_name") || "").trim() || organizationName,
+    registered_name: String(formData.get("registered_name") || "").trim(),
     email: String(formData.get("email") || "").trim(),
     address: organizationAddress,
-    establishment:
-      String(formData.get("establishment") || "").trim() ||
-      deriveEstablishmentFromAddress(organizationAddress) ||
-      ""
+    establishment: String(formData.get("establishment") || "").trim()
+  };
+
+  const raw = {
+    ...formValues,
+    registered_name: formValues.registered_name || organizationName,
+    establishment: formValues.establishment || deriveEstablishmentFromAddress(organizationAddress) || ""
   };
 
   const result = organizationSchema.safeParse(raw);
@@ -202,7 +204,7 @@ export async function updateOrganization(formData: FormData) {
 
   if (!result.success) {
     const message = result.error.issues[0]?.message || "Ogiltiga uppgifter.";
-    redirect(`/dashboard/organizations/${id}/edit?message=${encodeURIComponent(message)}`);
+    redirect(organizationEditFormUrl(id, message, formValues));
   }
 
   const { name, org_number, website, legal_form, registered_name, email, address, establishment } = result.data;
@@ -221,7 +223,7 @@ export async function updateOrganization(formData: FormData) {
     .eq("id", id);
 
   if (error) {
-    redirect(`/dashboard/organizations/${id}/edit?message=${encodeURIComponent("Organisationen kunde inte sparas.")}`);
+    redirect(organizationEditFormUrl(id, "Organisationen kunde inte sparas.", formValues));
   }
 
   revalidatePath("/dashboard");
@@ -836,6 +838,26 @@ function parseInteger(value: string | undefined): number | null {
   if (!value) return null;
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function organizationFormUrl(message: string, values: Record<string, string>) {
+  const params = new URLSearchParams({ new: "organization", message });
+
+  Object.entries(values).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+
+  return `/dashboard?${params.toString()}`;
+}
+
+function organizationEditFormUrl(id: string, message: string, values: Record<string, string>) {
+  const params = new URLSearchParams({ message });
+
+  Object.entries(values).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+
+  return `/dashboard/organizations/${id}/edit?${params.toString()}`;
 }
 
 function deriveEstablishmentFromAddress(address: string | null | undefined) {

@@ -11,7 +11,7 @@ export async function signIn(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/login?message=${encodeURIComponent(formatAuthError(error.message))}`);
+    redirect(authFormUrl("/login", formatAuthError(error.message), { email }));
   }
 
   redirect("/dashboard");
@@ -24,7 +24,7 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient();
 
   if (!privacyConsent) {
-    redirect("/signup?message=Du behöver godkänna hanteringen av personuppgifter.");
+    redirect(authFormUrl("/signup", "Du behöver godkänna hanteringen av personuppgifter.", { email }));
   }
 
   const { error } = await supabase.auth.signUp({
@@ -36,7 +36,7 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/signup?message=${encodeURIComponent(formatAuthError(error.message))}`);
+    redirect(authFormUrl("/signup", formatAuthError(error.message), { email }));
   }
 
   redirect(`/signup/success?email=${encodeURIComponent(email)}`);
@@ -51,7 +51,7 @@ export async function resetPassword(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/forgot-password?message=${encodeURIComponent(formatAuthError(error.message))}`);
+    redirect(authFormUrl("/forgot-password", formatAuthError(error.message), { email }));
   }
 
   redirect("/forgot-password?message=Om e-postadressen finns skickas en återställningslänk.");
@@ -91,4 +91,14 @@ function formatAuthError(message: string) {
   }
 
   return message;
+}
+
+function authFormUrl(path: string, message: string, values: Record<string, string>) {
+  const params = new URLSearchParams({ message });
+
+  Object.entries(values).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+
+  return `${path}?${params.toString()}`;
 }

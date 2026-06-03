@@ -4,7 +4,7 @@ import { signUp } from "../login/actions";
 export default async function SignupPage({
   searchParams
 }: {
-  searchParams: Promise<{ message?: string }>;
+  searchParams: Promise<{ message?: string; email?: string }>;
 }) {
   const params = await searchParams;
 
@@ -42,7 +42,7 @@ export default async function SignupPage({
             {params.message ? <p className="form-message">{params.message}</p> : null}
             <label>
               E-post
-              <input name="email" type="email" autoComplete="email" required />
+              <input name="email" type="email" autoComplete="email" defaultValue={params.email || ""} required />
             </label>
             <label>
               Lösenord

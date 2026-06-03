@@ -3,8 +3,8 @@
 import { saveCampaign } from "@/app/dashboard/actions";
 import type { Campaign, Organization, OrganizationContact } from "@/lib/types";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { MouseEvent } from "react";
-import { useEffect, useState } from "react";
+import type { FormEvent, MouseEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   campaign?: Campaign | null;
@@ -67,6 +67,7 @@ export function CampaignForm({
   const [priorNonCompliance, setPriorNonCompliance] = useState(Boolean(campaign?.prior_non_compliance));
   const [complaintContact, setComplaintContact] = useState(defaultComplaintContact);
   const [targetingUsed, setTargetingUsed] = useState(Boolean(campaign?.targeting_used));
+  const formRef = useRef<HTMLFormElement>(null);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,6 +92,35 @@ export function CampaignForm({
     );
   }, [defaultOrganizationId]);
 
+  useEffect(() => {
+    const storageKey = campaignFormStorageKey(campaign?.id, defaultOrganizationId);
+
+    if (!message) {
+      sessionStorage.removeItem(storageKey);
+      return;
+    }
+
+    const savedState = readSavedCampaignForm(storageKey);
+    if (!savedState) return;
+
+    setCurrentOrganizationId(savedState.state.currentOrganizationId || defaultOrganizationId);
+    setSponsorDifferentFromOrganization(savedState.state.sponsorDifferentFromOrganization);
+    setControllingEntityDifferentFromOrganization(savedState.state.controllingEntityDifferentFromOrganization);
+    setPayerDifferentFromOrganization(savedState.state.payerDifferentFromOrganization);
+    setPublisherDifferentFromOrganization(savedState.state.publisherDifferentFromOrganization);
+    setProcessLinkExists(savedState.state.processLinkExists);
+    setPriorNonCompliance(savedState.state.priorNonCompliance);
+    setTargetingUsed(savedState.state.targetingUsed);
+    setComplaintContact(savedState.values.complaint_contact || defaultComplaintContact);
+
+    window.setTimeout(() => {
+      if (!formRef.current) return;
+      fillFields(formRef.current, savedState.values);
+      setCheckbox(formRef.current, "amount_includes_vat", savedState.values.amount_includes_vat === "on");
+      setCheckbox(formRef.current, "prior_non_compliance", savedState.state.priorNonCompliance);
+    }, 0);
+  }, [campaign?.id, defaultComplaintContact, defaultOrganizationId, message]);
+
   function handleOrganizationChange(organizationId: string) {
     setCurrentOrganizationId(organizationId);
     if (!campaign) {
@@ -107,6 +137,31 @@ export function CampaignForm({
     const params = new URLSearchParams(searchParams.toString());
     params.set("organization", organizationId);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    const values = Object.fromEntries(
+      Array.from(new FormData(event.currentTarget).entries()).flatMap(([key, value]) =>
+        typeof value === "string" ? [[key, value]] : []
+      )
+    );
+
+    sessionStorage.setItem(
+      campaignFormStorageKey(campaign?.id, currentOrganizationId),
+      JSON.stringify({
+        values,
+        state: {
+          currentOrganizationId,
+          sponsorDifferentFromOrganization,
+          controllingEntityDifferentFromOrganization,
+          payerDifferentFromOrganization,
+          publisherDifferentFromOrganization,
+          processLinkExists,
+          priorNonCompliance,
+          targetingUsed
+        }
+      })
+    );
   }
 
   function handleFillTestData(event: MouseEvent<HTMLButtonElement>) {
@@ -205,7 +260,7 @@ export function CampaignForm({
   }
 
   return (
-    <form className="panel grid" action={saveCampaign}>
+    <form ref={formRef} className="panel grid" action={saveCampaign} onSubmit={handleFormSubmit}>
       {message ? <p className="error">{message}</p> : null}
       <input type="hidden" name="id" value={campaign?.id || ""} />
       <input
@@ -769,6 +824,32 @@ function findPreferredContact(
     organizationContacts.find((contact) => contact.user_id === currentUserId)?.email ||
     organizationContacts[0]?.email
   );
+}
+
+function campaignFormStorageKey(campaignId: string | undefined, organizationId: string | undefined) {
+  return `openttpa:campaign-form:${campaignId || `new:${organizationId || "unknown"}`}`;
+}
+
+function readSavedCampaignForm(storageKey: string) {
+  try {
+    const saved = sessionStorage.getItem(storageKey);
+    if (!saved) return null;
+    return JSON.parse(saved) as {
+      values: Record<string, string>;
+      state: {
+        currentOrganizationId: string;
+        sponsorDifferentFromOrganization: boolean;
+        controllingEntityDifferentFromOrganization: boolean;
+        payerDifferentFromOrganization: boolean;
+        publisherDifferentFromOrganization: boolean;
+        processLinkExists: boolean;
+        priorNonCompliance: boolean;
+        targetingUsed: boolean;
+      };
+    };
+  } catch {
+    return null;
+  }
 }
 
 function fillField(form: HTMLFormElement, name: string, value: string) {
