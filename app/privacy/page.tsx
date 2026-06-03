@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           />
           <Info
             label="Lagring"
-            value="Uppgifter sparas så länge kontot eller kampanjen behövs. Publicerade transparensuppgifter och ändringshistorik kan behöva sparas längre för spårbarhet och rättsliga krav."
+            value="Uppgifter sparas så länge kontot eller kampanjen behövs. Publicerade transparensuppgifter och ändringshistorik lagras permanent i minst sju (7) år för spårbarhet och uppfyllande av krav enligt gällande förordning (EU) 2024/900."
           />
           <Info
             label="Tredje parter"
